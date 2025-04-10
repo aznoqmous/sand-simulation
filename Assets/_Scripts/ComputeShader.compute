@@ -68,9 +68,12 @@ void eraseParticle(Particle p){
 void drawParticle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     if(p.type == 0) return;
-
     float4 color = Types[p.type].color;
-    Result[p.position] = color + unity_gradientNoise(p.position / 2.0) / 5.0;
+    if(p.type == 3) Result[p.position] = color + unity_gradientNoise(float2(p.position.x + Time, p.position.y + Time / 2.0) / 2.0) / 5.0;
+    else {
+        Result[p.position] = color + unity_gradientNoise(p.position / 2.0) / 5.0;
+    }
+
 }
 
 int positionToId(float2 position){
