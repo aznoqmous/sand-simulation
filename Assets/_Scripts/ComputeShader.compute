@@ -81,10 +81,10 @@ int positionToId(float x, float y){
 }
 
 Particle getParticle(float2 position){
-    if(position.y < 0.0) return BottomChunkParticles[positionToId(position.x, (Size - 5))];
-    if(position.y >= Size - 1.0) return TopChunkParticles[positionToId(position.x, 0.0)];
-    if(position.x < 0.0) return LeftChunkParticles[positionToId((Size - 5), position.y)];
-    if(position.x >= Size - 1.0) return RightChunkParticles[positionToId(0, position.y)];
+    if(position.y < 0.0) return BottomChunkParticles[positionToId(position.x, (Size - 1.0))];
+    if(position.y > Size - 1.0) return TopChunkParticles[positionToId(position.x, 0.0)];
+    if(position.x < 0.0) return LeftChunkParticles[positionToId((Size - 1.0), position.y)];
+    if(position.x > Size - 1.0) return RightChunkParticles[positionToId(0, position.y)];
     return Particles[position.x * Size + position.y];
 }
 
@@ -102,33 +102,33 @@ void moveParticle(inout Particle particle, float2 movement){
 
     Particle targetParticle = Particles[targetId];
     eraseParticle(particle);
-    if(targetPosition.y <= 0.0){
-        targetPosition = float2(targetPosition.x, Size - 1.0);
+    if(targetPosition.y < 0.0){
+        targetPosition.y = Size - 1.0;
         targetId = positionToId(targetPosition);
         targetParticle = BottomChunkParticles[targetId];
         particle.position = targetParticle.position;
         BottomChunkParticles[targetId] = particle;
     }
-    else if(targetPosition.y >= Size - 1.0){
-        targetPosition = float2(targetPosition.x, 0.0);
+    else if(targetPosition.y > Size - 1.0){
+        targetPosition.y = 0.0;
         targetId = positionToId(targetPosition);
         targetParticle = TopChunkParticles[targetId];
         particle.position = targetParticle.position;
         TopChunkParticles[targetId] = particle;
     }
-    else if(targetPosition.x >= Size - 1.0){
-        targetPosition = float2(0.0, targetPosition.y);
-        targetId = positionToId(targetPosition);
-        targetParticle = RightChunkParticles[targetId];
-        particle.position = targetParticle.position;
-        RightChunkParticles[targetId] = particle;
-    }
     else if(targetPosition.x < 0.0){
-        targetPosition = float2(Size - 1.0, targetPosition.y);
+        targetPosition.x = Size - 1.0;
         targetId = positionToId(targetPosition);
         targetParticle = LeftChunkParticles[targetId];
         particle.position = targetParticle.position;
         LeftChunkParticles[targetId] = particle;
+    }
+    else if(targetPosition.x > Size - 1.0){
+        targetPosition.x = 0.0;
+        targetId = positionToId(targetPosition);
+        targetParticle = RightChunkParticles[targetId];
+        particle.position = targetParticle.position;
+        RightChunkParticles[targetId] = particle;
     }
     else {
         Particles[targetId] = particle;
@@ -202,11 +202,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
         /**
         * Show chunk bounds
-        **/
         if(id.x == 0) Result[id.xy] = float4(1,1,1,1);
         if(id.x >= (Size - 1.0)) Result[id.xy] = float4(1,1,1,1);
         if(id.y == 0) Result[id.xy] = float4(1,1,1,1);
         if(id.y >= (Size - 1.0)) Result[id.xy] = float4(1,1,1,1);
+        **/
         return;
     }
 
