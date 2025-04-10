@@ -8,7 +8,6 @@ int Size;
 float Time;
 bool MouseDown;
 int MouseType;
-float4 MouseColor;
 float2 MousePosition;
 struct Particle {
     float2 position;
