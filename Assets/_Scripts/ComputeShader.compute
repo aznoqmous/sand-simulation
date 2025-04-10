@@ -4,7 +4,7 @@
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
-int Size;
+float Size;
 float Time;
 bool MouseDown;
 int MouseType;
@@ -15,6 +15,11 @@ struct Particle {
 };
 
 RWStructuredBuffer<Particle> Particles;
+
+RWStructuredBuffer<Particle> LeftChunkParticles;
+RWStructuredBuffer<Particle> TopChunkParticles;
+RWStructuredBuffer<Particle> BottomChunkParticles;
+RWStructuredBuffer<Particle> RightChunkParticles;
 
 struct ParticleType {
     float4 color;
@@ -68,24 +73,76 @@ void drawParticle(Particle p){
     Result[p.position] = color + unity_gradientNoise(p.position / 2.0) / 5.0;
 }
 
-bool isEmpty(float2 position){
-    return Particles[position.x * Size + position.y].type == 0;
+int positionToId(float2 position){
+    return position.x * Size + position.y;
 }
+int positionToId(float x, float y){
+    return x * Size + y;
+}
+
+Particle getParticle(float2 position){
+    if(position.y < 0.0) return BottomChunkParticles[positionToId(position.x, (Size - 5))];
+    if(position.y >= Size - 1.0) return TopChunkParticles[positionToId(position.x, 0.0)];
+    if(position.x < 0.0) return LeftChunkParticles[positionToId((Size - 5), position.y)];
+    if(position.x >= Size - 1.0) return RightChunkParticles[positionToId(0, position.y)];
+    return Particles[position.x * Size + position.y];
+}
+
+bool isEmpty(float2 position){
+    return getParticle(position).type == 0;
+}
+
+
 
 void moveParticle(inout Particle particle, float2 movement){
     float2 targetPosition = particle.position + movement;
+    float2 originalPosition = particle.position;
     int targetId = targetPosition.x * Size + targetPosition.y;
     int currentId = particle.position.x * Size + particle.position.y;
-    Particles[currentId] = Particles[targetId];
-    Particles[targetId] = particle;
 
-    Particles[currentId].position = particle.position;
-    Particles[targetId].position = targetPosition;
+    Particle targetParticle = Particles[targetId];
+    eraseParticle(particle);
+    if(targetPosition.y <= 0.0){
+        targetPosition = float2(targetPosition.x, Size - 1.0);
+        targetId = positionToId(targetPosition);
+        targetParticle = BottomChunkParticles[targetId];
+        particle.position = targetParticle.position;
+        BottomChunkParticles[targetId] = particle;
+    }
+    else if(targetPosition.y >= Size - 1.0){
+        targetPosition = float2(targetPosition.x, 0.0);
+        targetId = positionToId(targetPosition);
+        targetParticle = TopChunkParticles[targetId];
+        particle.position = targetParticle.position;
+        TopChunkParticles[targetId] = particle;
+    }
+    else if(targetPosition.x >= Size - 1.0){
+        targetPosition = float2(0.0, targetPosition.y);
+        targetId = positionToId(targetPosition);
+        targetParticle = RightChunkParticles[targetId];
+        particle.position = targetParticle.position;
+        RightChunkParticles[targetId] = particle;
+    }
+    else if(targetPosition.x < 0.0){
+        targetPosition = float2(Size - 1.0, targetPosition.y);
+        targetId = positionToId(targetPosition);
+        targetParticle = LeftChunkParticles[targetId];
+        particle.position = targetParticle.position;
+        LeftChunkParticles[targetId] = particle;
+    }
+    else {
+        Particles[targetId] = particle;
+        Particles[targetId].position = targetPosition;
+        drawParticle(particle);
+    }
+
+    Particles[currentId] = targetParticle;
+    Particles[currentId].position = originalPosition;
+
 }
 
 bool handleSand(inout Particle p)
 {
-    if(p.position.y <= 0.0) return false;
     if(isEmpty(p.position + float2(0.0, -1.0))){
         moveParticle(p, float2(0.0, -1.0));
         return true;
@@ -133,7 +190,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
 
-    
     Particle p = Particles[id.x * Size + id.y];
     
     if(distance(MousePosition, p.position) < 5.0 && MouseDown){
@@ -142,17 +198,25 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     if(Particles[p.position.x * Size + p.position.y].type == 0) {
-        Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+        eraseParticle(p);
+
+        /**
+        * Show chunk bounds
+        **/
+        if(id.x == 0) Result[id.xy] = float4(1,1,1,1);
+        if(id.x >= (Size - 1.0)) Result[id.xy] = float4(1,1,1,1);
+        if(id.y == 0) Result[id.xy] = float4(1,1,1,1);
+        if(id.y >= (Size - 1.0)) Result[id.xy] = float4(1,1,1,1);
         return;
     }
 
-    eraseParticle(p);
+    drawParticle(p);
+    //eraseParticle(p);
     if(Types[p.type].movementType == 1){
         handleSand(p);
     }
     if(Types[p.type].movementType == 2){
         handleWater(p);
     }
-    drawParticle(p);
 }
 

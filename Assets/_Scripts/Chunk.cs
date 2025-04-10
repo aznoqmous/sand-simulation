@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,13 +18,12 @@ public class Chunk : MonoBehaviour
     ComputeBuffer _particlesBuffer;
     ComputeBuffer _particleTypesBuffer;
 
-    [SerializeField] int _createdType = 1;
+    Simulation _simulation;
 
-    [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
 
-    void Start()
+    public void Init(Simulation simulation)
     {
-
+        _simulation = simulation;
         _computeShader = Instantiate(_computeShader);
 
         uint threadX = 0;
@@ -44,7 +44,13 @@ public class Chunk : MonoBehaviour
 
         _computeShader.SetTexture(_kernel, "Result", _renderTexture);
 
-        _computeShader.SetInt("Size", _size);
+        _computeShader.SetFloat("Size", _size);
+
+        ComputeBuffer defaultBuffer = new ComputeBuffer(1, 4); 
+        _computeShader.SetBuffer(_kernel, "LeftChunkParticles", defaultBuffer);
+        _computeShader.SetBuffer(_kernel, "TopChunkParticles", defaultBuffer);
+        _computeShader.SetBuffer(_kernel, "BottomChunkParticles", defaultBuffer);
+        _computeShader.SetBuffer(_kernel, "RightChunkParticles", defaultBuffer);
 
         InitParticles();
     }
@@ -71,25 +77,27 @@ public class Chunk : MonoBehaviour
             + sizeof(int)
         ;
         List<ParticleType> particleTypes = new List<ParticleType>();
-        foreach(ParticleResource particleType in _particleTypes)
+        foreach(ParticleResource particleType in _simulation.ParticleTypes)
         {
             ParticleType p = new ParticleType();
             p.color = particleType.color;
             p.movementType = (int)particleType.movementType;
             particleTypes.Add(p);
         }
-        _particleTypesBuffer = new ComputeBuffer(_particleTypes.Count, particleTypeSize);
+        _particleTypesBuffer = new ComputeBuffer(_simulation.ParticleTypes.Count, particleTypeSize);
         _particleTypesBuffer.SetData(particleTypes);
         _computeShader.SetBuffer(_kernel, "Types", _particleTypesBuffer);
     }
 
     void Update()
     {
+        if(_kernel != 0) return;
+
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePosition = ((mousePosition - (Vector2)transform.position) / _scale / (_size / 200f) + Vector2.one) * _size / 2f;
         _computeShader.SetVector("MousePosition", mousePosition);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
-        _computeShader.SetInt("MouseType", _createdType);
+        _computeShader.SetInt("MouseType", _simulation.CreatedType);
         _computeShader.SetFloat("Time", Time.time);
         _computeShader.Dispatch(_kernel, _dispatchCount.x, _dispatchCount.y, 1);
     }
@@ -101,7 +109,55 @@ public class Chunk : MonoBehaviour
         _scale = scale;
         transform.localScale = Vector3.one * scale;
     }
+
+    public Chunk LeftChunk;
+    public Chunk TopChunk;
+    public Chunk BottomChunk;
+    public Chunk RightChunk;
+
+    public void SetLeftChunk(Chunk chunk)
+    {
+        if(LeftChunk != null) return;
+        _computeShader.SetBuffer(_kernel, "LeftChunkParticles", chunk.GetParticlesBuffer());
+        LeftChunk = chunk;
+        chunk.SetRightChunk(this);
+    }
+    public void SetTopChunk(Chunk chunk)
+    {
+        if(TopChunk != null) return;
+        _computeShader.SetBuffer(_kernel, "TopChunkParticles", chunk.GetParticlesBuffer());
+        TopChunk = chunk;
+        chunk.SetBottomChunk(this);
+    }
+    public void SetBottomChunk(Chunk chunk)
+    {
+        if(BottomChunk != null) return;
+        _computeShader.SetBuffer(_kernel, "BottomChunkParticles", chunk.GetParticlesBuffer());
+        BottomChunk = chunk;
+        chunk.SetTopChunk(this);
+    }
+    public void SetRightChunk(Chunk chunk)
+    {
+        if(RightChunk != null) return;
+        _computeShader.SetBuffer(_kernel, "RightChunkParticles", chunk.GetParticlesBuffer());
+        RightChunk = chunk;
+        chunk.SetLeftChunk(this);
+    }
+
+    public void AddNeighbor(Chunk chunk)
+    {
+        if (chunk.transform.position.x < transform.position.x && chunk.transform.position.y == transform.position.y) SetLeftChunk(chunk);
+        if (chunk.transform.position.x > transform.position.x && chunk.transform.position.y == transform.position.y) SetRightChunk(chunk);
+        if (chunk.transform.position.x == transform.position.x && chunk.transform.position.y > transform.position.y) SetTopChunk(chunk);
+        if (chunk.transform.position.x == transform.position.x && chunk.transform.position.y < transform.position.y) SetBottomChunk(chunk);
+    }
+
+    public ComputeBuffer GetParticlesBuffer()
+    {
+        return _particlesBuffer;
+    }
 }
+
 
 public struct Particle {
     public Vector2 position;

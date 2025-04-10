@@ -464,8 +464,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _chunkPrefab: {fileID: 4894128201866133694, guid: 85ad83c741079cb438884120afcbb2d6, type: 3}
-  _chunkSize: 200
-  _chunkScale: 4
+  _chunkSize: 128
+  _chunkScale: 3
+  _createdType: 2
+  _particleTypes:
+  - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
+  - {fileID: 11400000, guid: c4f8326b81ee7b847b5a62bfe8de6200, type: 2}
+  - {fileID: 11400000, guid: 251ec4de5c9f53943bf189259a9c4f87, type: 2}
+  - {fileID: 11400000, guid: d1fd39be76d1ecf49bcdae27aacddb63, type: 2}
 --- !u!1 &1978285711
 GameObject:
   m_ObjectHideFlags: 0

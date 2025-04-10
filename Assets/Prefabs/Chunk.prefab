@@ -47,13 +47,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _computeShader: {fileID: 7200000, guid: 8e2f5104962421347bff5a7a1be8eba0, type: 3}
   _renderImage: {fileID: 3714341598733332125}
-  _size: 256
-  _createdType: 1
+  _createdType: 2
   _particleTypes:
   - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
   - {fileID: 11400000, guid: c4f8326b81ee7b847b5a62bfe8de6200, type: 2}
   - {fileID: 11400000, guid: 251ec4de5c9f53943bf189259a9c4f87, type: 2}
   - {fileID: 11400000, guid: d1fd39be76d1ecf49bcdae27aacddb63, type: 2}
+  LeftChunk: {fileID: 0}
+  TopChunk: {fileID: 0}
+  BottomChunk: {fileID: 0}
+  RightChunk: {fileID: 0}
 --- !u!1 &4999007209742574066
 GameObject:
   m_ObjectHideFlags: 0
