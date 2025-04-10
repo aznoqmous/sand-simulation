@@ -1,0 +1,156 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+int Size;
+float Time;
+bool MouseDown;
+int MouseType;
+float4 MouseColor;
+float2 MousePosition;
+struct Particle {
+    float2 position;
+    float4 color;
+    int type;
+};
+
+RWStructuredBuffer<Particle> Particles;
+
+float2 unity_gradientNoise_dir(float2 p)
+{
+    p = p % 289;
+    float x = (34 * p.x + 1) * p.x % 289 + p.y;
+    x = (34 * x + 1) * x % 289;
+    x = frac(x / 41) * 2 - 1;
+    return normalize(float2(x - floor(x + 0.5), abs(x) - 0.5));
+}
+
+float unity_gradientNoise(float2 p)
+{
+    float2 ip = floor(p);
+    float2 fp = frac(p);
+    float d00 = dot(unity_gradientNoise_dir(ip), fp);
+    float d01 = dot(unity_gradientNoise_dir(ip + float2(0, 1)), fp - float2(0, 1));
+    float d10 = dot(unity_gradientNoise_dir(ip + float2(1, 0)), fp - float2(1, 0));
+    float d11 = dot(unity_gradientNoise_dir(ip + float2(1, 1)), fp - float2(1, 1));
+    fp = fp * fp * fp * (fp * (fp * 6 - 15) + 10);
+    return lerp(lerp(d00, d01, fp.y), lerp(d10, d11, fp.y), fp.x);
+}
+
+float fract(float x)
+{
+    return x / floor(x);
+}
+
+float rand(float2 c){
+    return fract(sin(dot(c.xy, float2(12.9898 + Time, 78.233))) * 43758.5453);
+}
+
+void draw(float2 position, float4 color){
+    Result[position] = color;
+}
+
+void eraseParticle(Particle p){
+    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+}
+
+void drawParticle(Particle p){
+    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    if(p.type == 1) Result[p.position] = p.color + unity_gradientNoise(p.position / 2.0) / 5.0;
+    if(p.type == 2) Result[p.position] = p.color + unity_gradientNoise(p.position / 2.0) / 5.0;
+    if(p.type == 3) Result[p.position] = p.color + (unity_gradientNoise(p.position / 2.0 + float2(Time, 0.0)) + unity_gradientNoise(p.position + float2(0.0, Time))) / 5.0;
+
+    //if(p.type == 1) Result[p.position] = float4(1.0, 1.0, 0.0, 1.0) * ( 1 - unity_gradientNoise(p.position / Size));
+    //if(p.type == 2) Result[p.position] = float4(0.0, 1.0, 1.0, 1.0) * ( 1 - unity_gradientNoise(p.position / Size));
+}
+
+bool isEmpty(float2 position){
+    return Particles[position.x * Size + position.y].type == 0;
+}
+
+void moveParticle(inout Particle particle, float2 movement){
+    float2 targetPosition = particle.position + movement;
+    int targetId = targetPosition.x * Size + targetPosition.y;
+    int currentId = particle.position.x * Size + particle.position.y;
+    Particles[currentId] = Particles[targetId];
+    Particles[targetId] = particle;
+
+    Particles[currentId].position = particle.position;
+    Particles[targetId].position = targetPosition;
+}
+
+bool handleSand(inout Particle p)
+{
+    if(p.position.y <= 0.0) return false;
+    if(isEmpty(p.position + float2(0.0, -1.0))){
+        moveParticle(p, float2(0.0, -1.0));
+        return true;
+    }
+    else {
+        if (isEmpty(p.position + float2(1, 0)) && isEmpty(p.position + float2(1, -1)))
+        {
+            moveParticle(p, float2(1.0, 0.0));
+            return true;
+        }
+        else if (isEmpty(p.position + float2(-1, 0)) && isEmpty(p.position + float2(-1, -1)))
+        {
+            moveParticle(p, float2(-1.0, 0.0));
+            return true;
+        }
+    }
+    return false;
+}
+
+bool handleWater(inout Particle p){
+
+
+    if(!handleSand(p)){
+        if (int(rand(p.position) * 100000.0) % 2 == 0 && isEmpty(p.position + float2(1, 0)))
+        {
+            moveParticle(p, float2(1.0, 0.0));
+            return true;
+        }
+        else if (isEmpty(p.position + float2(-1, 0)))
+        {
+            moveParticle(p, float2(-1.0, 0.0));
+            return true;
+        }
+        else if (isEmpty(p.position + float2(1, 0)))
+        {
+            moveParticle(p, float2(1.0, 0.0));
+            return true;
+        }
+    }
+
+    return false;
+}
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+
+    
+    Particle p = Particles[id.x * Size + id.y];
+    
+    if(distance(MousePosition, p.position) < 5.0 && MouseDown){
+        Particles[p.position.x * Size + p.position.y].type = MouseType;
+        Particles[p.position.x * Size + p.position.y].color = MouseColor;
+        return;
+    }
+    /*if(p.type == 0) {
+        Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
+        return;
+    }*/
+
+    eraseParticle(p);
+    if(p.type == 2){
+        handleSand(p);
+    }
+    if(p.type == 3){
+        handleWater(p);
+    }
+    drawParticle(p);
+}
+
