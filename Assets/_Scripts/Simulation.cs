@@ -19,17 +19,7 @@ public class Simulation : MonoBehaviour
     [SerializeField] int _createdType = 1;
     [SerializeField] Color _createdColor = Color.white;
 
-    [SerializeField] List<ParticleType> _particleTypes = new List<ParticleType>();
-
-    Particle sandParticle = new Particle(){
-        color = Color.yellow,
-        type = 2
-    };
-    Particle waterParticle = new Particle(){
-        color = Color.cyan,
-        type = 3
-    };
-
+    [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
 
     void Start()
     {
@@ -62,22 +52,34 @@ public class Simulation : MonoBehaviour
         for(int x = 0; x < _size; x++){
             for(int y = 0; y < _size; y++){
                 Particle p = new Particle();
-                if(UnityEngine.Random.value < 0.1f) p = sandParticle;
-                else if(UnityEngine.Random.value < 0.1f) p = waterParticle;
+                /*if(UnityEngine.Random.value < 0.1f) p = sandParticle;
+                else if(UnityEngine.Random.value < 0.1f) p = waterParticle;*/
                 p.position = new Vector2(x, y);
                 _particles.Add(p);
             }
         }
 
         int particleSize = sizeof(float) * 2
-            + sizeof(float) * 4
             + sizeof(int)
         ;
         _particlesBuffer = new ComputeBuffer(Mathf.FloorToInt(Mathf.Pow(_size, 2f)), particleSize);
-
-        _computeShader.SetBuffer(_kernel, "Particles", _particlesBuffer);
-        _computeShader.SetBuffer(_kernel, "Types", _particleTypesBuffer);
         _particlesBuffer.SetData(_particles);
+        _computeShader.SetBuffer(_kernel, "Particles", _particlesBuffer);
+
+        int particleTypeSize = sizeof(float) * 4
+            + sizeof(int)
+        ;
+        List<ParticleType> particleTypes = new List<ParticleType>();
+        foreach(ParticleResource particleType in _particleTypes)
+        {
+            ParticleType p = new ParticleType();
+            p.color = particleType.color;
+            p.movementType = (int)particleType.movementType;
+            particleTypes.Add(p);
+        }
+        _particleTypesBuffer = new ComputeBuffer(_particleTypes.Count, particleTypeSize);
+        _particleTypesBuffer.SetData(particleTypes);
+        _computeShader.SetBuffer(_kernel, "Types", _particleTypesBuffer);
     }
 
     void Update()
@@ -95,17 +97,11 @@ public class Simulation : MonoBehaviour
 
 public struct Particle {
     public Vector2 position;
-    public Color color;
-    public int type;
+    public int particleType;
 }
 
-
-[Serializable] public class ParticleType {
+public struct ParticleType 
+{
     public Color color;
-    public MovementType movementType;
-}
-public enum MovementType {
-    Idle,
-    Sand,
-    Water
+    public int movementType;
 }

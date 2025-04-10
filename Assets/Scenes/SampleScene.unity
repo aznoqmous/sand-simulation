@@ -555,6 +555,11 @@ MonoBehaviour:
   _size: 1024
   _createdType: 1
   _createdColor: {r: 1, g: 1, b: 1, a: 1}
+  _particleTypes:
+  - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
+  - {fileID: 11400000, guid: c4f8326b81ee7b847b5a62bfe8de6200, type: 2}
+  - {fileID: 11400000, guid: 251ec4de5c9f53943bf189259a9c4f87, type: 2}
+  - {fileID: 11400000, guid: d1fd39be76d1ecf49bcdae27aacddb63, type: 2}
 --- !u!4 &921767970
 Transform:
   m_ObjectHideFlags: 0

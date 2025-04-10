@@ -12,11 +12,16 @@ float4 MouseColor;
 float2 MousePosition;
 struct Particle {
     float2 position;
-    float4 color;
     int type;
 };
 
 RWStructuredBuffer<Particle> Particles;
+
+struct ParticleType {
+    float4 color;
+    int movementType;
+};
+RWStructuredBuffer<ParticleType> Types;
 
 float2 unity_gradientNoise_dir(float2 p)
 {
@@ -58,12 +63,10 @@ void eraseParticle(Particle p){
 
 void drawParticle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
-    if(p.type == 1) Result[p.position] = p.color + unity_gradientNoise(p.position / 2.0) / 5.0;
-    if(p.type == 2) Result[p.position] = p.color + unity_gradientNoise(p.position / 2.0) / 5.0;
-    if(p.type == 3) Result[p.position] = p.color + (unity_gradientNoise(p.position / 2.0 + float2(Time, 0.0)) + unity_gradientNoise(p.position + float2(0.0, Time))) / 5.0;
+    if(p.type == 0) return;
 
-    //if(p.type == 1) Result[p.position] = float4(1.0, 1.0, 0.0, 1.0) * ( 1 - unity_gradientNoise(p.position / Size));
-    //if(p.type == 2) Result[p.position] = float4(0.0, 1.0, 1.0, 1.0) * ( 1 - unity_gradientNoise(p.position / Size));
+    float4 color = Types[p.type].color;
+    Result[p.position] = color + unity_gradientNoise(p.position / 2.0) / 5.0;
 }
 
 bool isEmpty(float2 position){
@@ -136,19 +139,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     
     if(distance(MousePosition, p.position) < 5.0 && MouseDown){
         Particles[p.position.x * Size + p.position.y].type = MouseType;
-        Particles[p.position.x * Size + p.position.y].color = MouseColor;
         return;
     }
-    /*if(p.type == 0) {
+
+    if(Particles[p.position.x * Size + p.position.y].type == 0) {
         Result[id.xy] = float4(0.0, 0.0, 0.0, 0.0);
         return;
-    }*/
+    }
 
     eraseParticle(p);
-    if(p.type == 2){
+    if(Types[p.type].movementType == 1){
         handleSand(p);
     }
-    if(p.type == 3){
+    if(Types[p.type].movementType == 2){
         handleWater(p);
     }
     drawParticle(p);
