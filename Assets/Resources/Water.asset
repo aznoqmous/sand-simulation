@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d8168a0c9732804ebd276c9978a32b7, type: 3}
   m_Name: Water
   m_EditorClassIdentifier: 
-  color: {r: 0, g: 0.64825225, b: 1, a: 1}
+  color: {r: 0, g: 0.6326096, b: 1, a: 1}
   movementType: 2

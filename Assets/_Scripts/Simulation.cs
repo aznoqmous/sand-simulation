@@ -8,20 +8,30 @@ public class Simulation : MonoBehaviour
 
     [SerializeField] int _chunkSize = 200;
     [SerializeField] int _chunkScale = 4;
+    [SerializeField] int _activeChunkDistance = 10;
 
     [SerializeField] int _createdType = 1;
     [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
+    [SerializeField] bool _drawBounds = false;
+
+    [SerializeField] Player player;
 
     public int CreatedType => _createdType;
     public List<ParticleResource> ParticleTypes => _particleTypes;
+    public bool DrawBounds => _drawBounds;
 
     void Start()
     {
         Vector2 screenChunks = new Vector2(
-            Screen.width / (float)(_chunkSize * _chunkScale) + 1f,
-            Screen.height / (float)(_chunkSize * _chunkScale) + 1f
+            Screen.width / (float)(_chunkSize * _chunkScale) + 2f,
+            Screen.height / (float)(_chunkSize * _chunkScale) + 2f
         );
-        float worldChunkSize = _chunkSize / 100f * _chunkScale;
+
+        Debug.Log(Screen.width + " " + Screen.height + " " + screenChunks.x + " " + screenChunks.y);
+
+        float ratio = 1f / 0.0193f;
+
+        float worldChunkSize = _chunkSize / ratio * _chunkScale;
         for(int x = 0; x < screenChunks.x; x++){
             for(int y = 0; y < screenChunks.y; y++){
                 Vector3 position = new Vector3((x - screenChunks.x / 2f) * worldChunkSize, (y - screenChunks.y / 2f) * worldChunkSize);
@@ -32,6 +42,14 @@ public class Simulation : MonoBehaviour
                 newChunk.name = $"Chunk {x} {y}";
                 AddChunk(new Vector2Int(x, y), newChunk);
             }
+        }
+    }
+
+    void Update()
+    {
+        foreach(Chunk chunk in _chunks.Values)
+        {
+            chunk.gameObject.SetActive((player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance);
         }
     }
 

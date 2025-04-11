@@ -92,10 +92,12 @@ public class Chunk : MonoBehaviour
     void Update()
     {
         if(_kernel != 0) return;
+        float ratio = 1f / 0.0193f;
 
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        mousePosition = ((mousePosition - (Vector2)transform.position) / _scale / (_size / 200f) + Vector2.one) * _size / 2f;
+        mousePosition = ((mousePosition - (Vector2)transform.position) / _scale / (_size / ratio / 2f) + Vector2.one) * _size / 2f;
         _computeShader.SetVector("MousePosition", mousePosition);
+        _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
         _computeShader.SetInt("MouseType", _simulation.CreatedType);
         _computeShader.SetFloat("Time", Time.time);
