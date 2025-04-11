@@ -512,7 +512,7 @@ MonoBehaviour:
   _chunkPrefab: {fileID: 4894128201866133694, guid: 85ad83c741079cb438884120afcbb2d6, type: 3}
   _chunkSize: 256
   _chunkScale: 2
-  _activeChunkDistance: 10
+  _activeChunkDistance: 2
   _createdType: 1
   _particleTypes:
   - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
