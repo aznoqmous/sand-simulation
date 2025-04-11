@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2297824e3bc562a48b4296fb5303f4fa
+timeCreated: 1450476098
+licenseType: Store
+DefaultImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 52265
+  packageName: Advanced Polygon Collider
+  packageVersion: 1.0.6
+  assetPath: Assets/AdvancedPolygonCollider/Demo/DemoScene.unity
+  uploadId: 239309

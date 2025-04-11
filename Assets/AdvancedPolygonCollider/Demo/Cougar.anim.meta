@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a9462ea73d0b7fa41a4a23697b20eb77
+timeCreated: 1450557622
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 52265
+  packageName: Advanced Polygon Collider
+  packageVersion: 1.0.6
+  assetPath: Assets/AdvancedPolygonCollider/Demo/Cougar.anim
+  uploadId: 239309

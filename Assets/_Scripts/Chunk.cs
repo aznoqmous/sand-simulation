@@ -1,13 +1,18 @@
 using System.Collections.Generic;
+using DigitalRuby.AdvancedPolygonCollider;
+using LibTessDotNet;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 
 public class Chunk : MonoBehaviour
 {
     [SerializeField] private ComputeShader _computeShader;
     [SerializeField] RawImage _renderImage;
+    [SerializeField] private AdvancedPolygonCollider _collider;
     RenderTexture _renderTexture;
+    [SerializeField] SpriteRenderer _spriteRenderer;
 
     int _size = 200;
     int _scale = 4;
@@ -20,6 +25,8 @@ public class Chunk : MonoBehaviour
 
     Simulation _simulation;
 
+    [SerializeField] GameObject _colliderGameObject;
+    [SerializeField] Canvas _canvas;
 
     public void Init(Simulation simulation)
     {
@@ -41,7 +48,7 @@ public class Chunk : MonoBehaviour
         _renderTexture.Create();
         _renderImage.texture = _renderTexture;
         _renderImage.rectTransform.sizeDelta = new Vector2(_size, _size);
-
+        
         _computeShader.SetTexture(_kernel, "Result", _renderTexture);
 
         _computeShader.SetFloat("Size", _size);
@@ -51,6 +58,9 @@ public class Chunk : MonoBehaviour
         _computeShader.SetBuffer(_kernel, "TopChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "BottomChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "RightChunkParticles", defaultBuffer);
+
+        _colliderGameObject.transform.localScale = _canvas.transform.localScale * _scale;
+        _colliderGameObject.transform.position = -Vector3.one * _simulation.WorldChunkSize / 2f;
 
         InitParticles();
     }
@@ -107,6 +117,7 @@ public class Chunk : MonoBehaviour
     public void SetSize(int size){
         _size = size;
     }
+
     public void SetScale(int scale){
         _scale = scale;
         transform.localScale = Vector3.one * scale;
@@ -157,6 +168,37 @@ public class Chunk : MonoBehaviour
     public ComputeBuffer GetParticlesBuffer()
     {
         return _particlesBuffer;
+    }
+
+    Texture2D _texture;
+    public void UpdateCollider()
+    {
+        
+
+        if(_texture == null) _texture = new Texture2D(_size, _size, TextureFormat.RGBA32, false);
+        
+        AsyncGPUReadback.Request(_renderTexture, 0, TextureFormat.RGBA32, (req) =>
+        {
+            if (!req.hasError)
+            {
+                var rawData = req.GetData<Color32>();
+                _texture.LoadRawTextureData(rawData);
+                _texture.Apply();
+
+                _spriteRenderer.sprite = Sprite.Create(_texture, new Rect(0, 0, _size, _size), Vector2.zero, _scale);
+                _collider.RecalculatePolygon();
+            }
+        });
+    
+    }
+
+    Texture2D ToTexture2D(RenderTexture rTex)
+    {
+        Texture2D tex = new Texture2D(64, 64);
+        RenderTexture.active = rTex;
+        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
+        tex.Apply();
+        return tex;
     }
 }
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 
@@ -18,6 +19,7 @@ public class Simulation : MonoBehaviour
     [SerializeField] Player player;
 
     float _worldChunkSize = 0f;
+    public float WorldChunkSize => _worldChunkSize;
 
     public int CreatedType => _createdType;
     public List<ParticleResource> ParticleTypes => _particleTypes;
@@ -46,7 +48,6 @@ public class Simulation : MonoBehaviour
             _activeChunkDistance + 1,
             _activeChunkDistance + 1
         );
-
     }
 
     void UpdateChunks(){
@@ -65,12 +66,23 @@ public class Simulation : MonoBehaviour
             }
         }
     }
+
     void Update()
     {
         UpdateChunks();
         foreach(Chunk chunk in _chunks.Values)
         {
-            chunk.gameObject.SetActive((player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize);
+            chunk.gameObject.SetActive((player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize * 2f);
+        }
+
+
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            _chunks[Vector2Int.zero].UpdateCollider();
+            /*foreach(Chunk chunk in _chunks.Values)
+            {
+                chunk.UpdateCollider();
+            }*/
         }
     }
 
