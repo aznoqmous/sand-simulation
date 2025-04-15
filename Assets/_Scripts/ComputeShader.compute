@@ -79,27 +79,6 @@ void draw(float2 position, float4 color){
     Result[position] = color;
 }
 
-void eraseParticle(Particle p){
-    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
-}
-
-void drawParticle(Particle p){
-    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
-    if(p.type == 0) return;
-    float4 color = Types[p.type].color;
-    
-    float noise = 1.0;
-    if(p.type == 3) {
-        noise = unity_gradientNoise(p.position / 2.0 + float2(Time, Time));
-    }
-    else {
-        noise = unity_gradientNoise(p.position / 2.0);
-    }
-    Result[p.position] = color * (noise * 0.6 + 1.0);
-
-    // Result[p.position] = float4(p.direction.x, p.direction.y, 0.0, 1.0);
-}
-
 int positionToId(float2 position){
     return position.x * Size + position.y;
 }
@@ -117,6 +96,32 @@ Particle getParticle(float2 position){
 
 bool isEmpty(float2 position){
     return getParticle(position).type == 0;
+}
+
+void eraseParticle(Particle p){
+    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+}
+
+void drawParticle(Particle p){
+    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    if(p.type == 0) return;
+    float4 color = Types[p.type].color;
+    
+    float noise = 1.0;
+    if(p.type == 1) // dirt
+    {
+        if(isEmpty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
+        noise = unity_gradientNoise(p.position / 2.0);
+    }
+    else if(p.type == 3) {
+        noise = unity_gradientNoise(p.position / 2.0 + float2(Time, Time));
+    }
+    else {
+        noise = unity_gradientNoise(p.position / 2.0);
+    }
+    Result[p.position] = color * (noise * 0.6 + 1.0);
+
+    // Result[p.position] = float4(p.direction.x, p.direction.y, 0.0, 1.0);
 }
 
 void moveParticle(inout Particle particle, float2 movement){

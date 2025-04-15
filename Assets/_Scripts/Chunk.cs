@@ -72,7 +72,10 @@ public class Chunk : MonoBehaviour
                 Particle p = new Particle();
                 p.position = new Vector2(x, y);
                 p.realPosition = new Vector2(x, y);
-                
+                if(Mathf.PerlinNoise(
+                    (_simulation.Seed + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
+                    (_simulation.Seed + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
+                ) < 0.5f) p.particleType = 1;
                 _particles.Add(p);
             }
         }

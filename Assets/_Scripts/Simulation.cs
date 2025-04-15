@@ -16,6 +16,7 @@ public class Simulation : MonoBehaviour
 
     [Header("Simulation")]
     [SerializeField] float _gravity = 9.81f;
+    [SerializeField] int _seed = 123456;
 
     [Header("Brush")]
     [SerializeField] int _brushSize = 10;
@@ -27,7 +28,7 @@ public class Simulation : MonoBehaviour
 
     public int BrushSize => _brushSize;
     public float Gravity => _gravity;
-
+    public int Seed => _seed;
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;
 
