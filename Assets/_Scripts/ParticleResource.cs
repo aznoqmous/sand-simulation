@@ -6,6 +6,7 @@ using UnityEngine;
 public class ParticleResource : ScriptableObject {
     public Color color;
     public MovementType movementType;
+    public float dispersion;
 }
 public enum MovementType {
     Idle,

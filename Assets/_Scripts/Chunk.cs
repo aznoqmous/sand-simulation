@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using DigitalRuby.AdvancedPolygonCollider;
-using LibTessDotNet;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -72,19 +71,26 @@ public class Chunk : MonoBehaviour
             for(int y = 0; y < _size; y++){
                 Particle p = new Particle();
                 p.position = new Vector2(x, y);
+                p.realPosition = new Vector2(x, y);
+                
                 _particles.Add(p);
             }
         }
 
-        int particleSize = sizeof(float) * 2
-            + sizeof(int)
+        int particleSize = 
+            sizeof(float) * 2 // position
+            + sizeof(float) * 2 // position
+            + sizeof(float) * 2 // direction
+            + sizeof(float) // speed
+            + sizeof(int) // type
         ;
         _particlesBuffer = new ComputeBuffer(Mathf.FloorToInt(Mathf.Pow(_size, 2f)), particleSize);
         _particlesBuffer.SetData(_particles);
         _computeShader.SetBuffer(_kernel, "Particles", _particlesBuffer);
 
-        int particleTypeSize = sizeof(float) * 4
-            + sizeof(int)
+        int particleTypeSize = sizeof(float) * 4 // color
+            + sizeof(int) // movement type
+            + sizeof(float) // dispersion
         ;
         List<ParticleType> particleTypes = new List<ParticleType>();
         foreach(ParticleResource particleType in _simulation.ParticleTypes)
@@ -92,6 +98,7 @@ public class Chunk : MonoBehaviour
             ParticleType p = new ParticleType();
             p.color = particleType.color;
             p.movementType = (int)particleType.movementType;
+            p.dispersion = particleType.dispersion;
             particleTypes.Add(p);
         }
         _particleTypesBuffer = new ComputeBuffer(_simulation.ParticleTypes.Count, particleTypeSize);
@@ -110,7 +117,10 @@ public class Chunk : MonoBehaviour
         _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
         _computeShader.SetInt("MouseType", _simulation.CreatedType);
+        _computeShader.SetInt("BrushSize", _simulation.BrushSize);
         _computeShader.SetFloat("Time", Time.time);
+        _computeShader.SetFloat("DeltaTime", Time.deltaTime);
+        _computeShader.SetFloat("Gravity", _simulation.Gravity);
         _computeShader.Dispatch(_kernel, _dispatchCount.x, _dispatchCount.y, 1);
     }
 
@@ -205,6 +215,9 @@ public class Chunk : MonoBehaviour
 
 public struct Particle {
     public Vector2 position;
+    public Vector2 realPosition;
+    public Vector2 direction;
+    public float speed;
     public int particleType;
 }
 
@@ -212,4 +225,6 @@ public struct ParticleType
 {
     public Color color;
     public int movementType;
+
+    public float dispersion;
 }

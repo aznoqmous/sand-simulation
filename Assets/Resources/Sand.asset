@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   color: {r: 0.8867924, g: 0.79127634, b: 0.3890174, a: 1}
   movementType: 1
+  dispersion: 200

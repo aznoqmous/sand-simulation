@@ -7,16 +7,26 @@ public class Simulation : MonoBehaviour
 {
     [SerializeField] Chunk _chunkPrefab;
     [SerializeField] Dictionary<Vector2Int, Chunk> _chunks = new Dictionary<Vector2Int, Chunk>();
-
+    
+    [Header("Chunks")]
     [SerializeField] int _chunkSize = 200;
     [SerializeField] int _chunkScale = 4;
     [SerializeField] int _activeChunkDistance = 10;
-
-    [SerializeField] int _createdType = 1;
-    [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
     [SerializeField] bool _drawBounds = false;
 
+    [Header("Simulation")]
+    [SerializeField] float _gravity = 9.81f;
+
+    [Header("Brush")]
+    [SerializeField] int _brushSize = 10;
+    [SerializeField] int _createdType = 1;
+
+    [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
+
     [SerializeField] Player player;
+
+    public int BrushSize => _brushSize;
+    public float Gravity => _gravity;
 
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;

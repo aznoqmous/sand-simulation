@@ -15,7 +15,7 @@ public class Player : MonoBehaviour
     void Update()
     {
         Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(transform.position.x, transform.position.y, Camera.main.transform.position.z), Time.deltaTime * 2f);
-        Camera.main.orthographicSize += Input.GetAxis("Mouse ScrollWheel") * _scrollSpeed;
+        Camera.main.orthographicSize -= Input.GetAxis("Mouse ScrollWheel") * _scrollSpeed;
         
         if(Input.GetKeyDown(KeyCode.T))
         {
