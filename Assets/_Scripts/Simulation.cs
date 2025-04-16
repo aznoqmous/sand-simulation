@@ -33,7 +33,7 @@ public class Simulation : MonoBehaviour
     public int Seed => _seed;
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;
-
+    public float UpdateColliderFrequency => _updateColliderFrequency;
     public int CreatedType => _createdType;
     public List<ParticleResource> ParticleTypes => _particleTypes;
     public bool DrawBounds => _drawBounds;

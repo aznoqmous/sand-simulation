@@ -14,6 +14,7 @@ bool MouseDown;
 bool DrawBounds;
 int MouseType;
 int BrushSize;
+float2 ChunkPosition;
 float2 MousePosition;
 
 const float2 DIR_UP = float2(0.0, 1.0);
@@ -121,6 +122,10 @@ void erase_particle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
 }
 
+float get_noise(float2 input){
+    return unity_gradientNoise(input) * 0.5 + unity_gradientNoise(input / 3.5) * 0.5;
+}
+
 void draw_particle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     if(p.type == 0) return;
@@ -130,14 +135,14 @@ void draw_particle(Particle p){
     if(p.type == 1) // dirt
     {
         if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
-        noise = unity_gradientNoise(p.position / 2.0);
+        noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
     }
     else if(p.type == 3) { // water
-        noise = unity_gradientNoise(p.position / 2.0 + float2(Time, Time));
+        noise = get_noise((ChunkPosition * Size + p.position) / 2.0 + float2(Time, Time));
         color.w = 0.5;
     }
     else {
-        noise = unity_gradientNoise(p.position / 2.0);
+        noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
     }
     Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
 

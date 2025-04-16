@@ -84,6 +84,7 @@ public class Chunk : MonoBehaviour
         _computeShader.SetBuffer(_kernel, "TopChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "BottomChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "RightChunkParticles", defaultBuffer);
+        _computeShader.SetVector("ChunkPosition", transform.position / _simulation.WorldChunkSize);
 
         _colliderGameObject.transform.localScale = _canvas.transform.localScale * _scale;
         _colliderGameObject.transform.position = -Vector3.one * _simulation.WorldChunkSize / 2f + transform.position;
@@ -107,9 +108,9 @@ public class Chunk : MonoBehaviour
                     (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                     (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                 );
-                if(temp < 0.3f && moist > 0.5f) p.particleType = 3;
-                else if(temp < 0.3f) p.particleType = 2;
-                else if(temp < 0.5f) p.particleType = 1;
+                if(temp > 0.5f && moist > 0.5f) p.particleType = 3;
+                else if(temp < 0.2f) p.particleType = 2;
+                else if(temp < 0.4f) p.particleType = 1;
                 _particles.Add(p);
             }
         }
@@ -233,20 +234,23 @@ public class Chunk : MonoBehaviour
     Texture2D _texture;
     public void UpdateCollider()
     {
-        
-
         if(_texture == null) _texture = new Texture2D(_size, _size, TextureFormat.RGBA32, false);
-        
+
+
         AsyncGPUReadback.Request(_colliderTexture, 0, TextureFormat.RGBA32, (req) =>
         {
             if (!req.hasError)
             {
+                AdvancedPolygonCollider tempCollider = Instantiate(_collider, transform);
+
                 var rawData = req.GetData<Color32>();
                 _texture.LoadRawTextureData(rawData);
                 _texture.Apply();
 
                 _spriteRenderer.sprite = Sprite.Create(_texture, new Rect(0, 0, _size, _size), Vector2.zero, _scale);
                 _collider.RecalculatePolygon();
+
+                Destroy(tempCollider.gameObject, _simulation.UpdateColliderFrequency);
             }
         });
     

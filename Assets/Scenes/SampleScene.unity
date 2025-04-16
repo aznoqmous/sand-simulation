@@ -555,7 +555,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _scrollSpeed: 1
   _moveSpeed: 20
-  _jumpSpeed: 3
+  _jumpSpeed: 4
   _rigidbody2D: {fileID: 1318452711}
 --- !u!60 &1318452709
 PolygonCollider2D:
@@ -688,8 +688,8 @@ MonoBehaviour:
   _updateColliderFrequency: 0.5
   _gravity: 98.1
   _seed: 123456
-  _brushSize: 4
-  _createdType: 2
+  _brushSize: 10
+  _createdType: 0
   _particleTypes:
   - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
   - {fileID: 11400000, guid: c4f8326b81ee7b847b5a62bfe8de6200, type: 2}

@@ -387,16 +387,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c55c83d4c4dd1145ad5fbbab3c3df36, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AlphaTolerance: 30
-  DistanceThreshold: 2
+  AlphaTolerance: 10
+  DistanceThreshold: 3
   Scale: 1
-  Decompose: 1
+  Decompose: 0
   RunInPlayMode: 0
   UseCache: 0
-  lastAlphaTolerance: 30
+  lastAlphaTolerance: 10
   lastScale: 1
-  lastDistanceThreshold: 2
-  lastDecompose: 1
+  lastDistanceThreshold: 3
+  lastDecompose: 0
   lastSprite: {fileID: 0}
   lastRect:
     serializedVersion: 2
