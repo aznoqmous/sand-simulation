@@ -11,8 +11,10 @@ public class Simulation : MonoBehaviour
     [Header("Chunks")]
     [SerializeField] int _chunkSize = 200;
     [SerializeField] int _chunkScale = 4;
-    [SerializeField] int _activeChunkDistance = 10;
+    [SerializeField] float _activeChunkDistance = 1.5f;
     [SerializeField] bool _drawBounds = false;
+    [SerializeField] float _updateColliderFrequency = 0.5f;
+    float _lastColliderUpdate = 0f;
 
     [Header("Simulation")]
     [SerializeField] float _gravity = 9.81f;
@@ -56,8 +58,8 @@ public class Simulation : MonoBehaviour
     Vector2Int GetActiveChunks()
     {
         return new Vector2Int(
-            _activeChunkDistance + 1,
-            _activeChunkDistance + 1
+            Mathf.RoundToInt(_activeChunkDistance) + 1,
+            Mathf.RoundToInt(_activeChunkDistance) + 1
         );
     }
 
@@ -84,6 +86,12 @@ public class Simulation : MonoBehaviour
         foreach(Chunk chunk in _chunks.Values)
         {
             chunk.gameObject.SetActive((player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize * 2f);
+            chunk.TestImage.enabled = false;
+        }
+        Chunk c = GetActiveChunk();
+        if(c != null)
+        {
+            c.TestImage.enabled = true;
         }
 
 
@@ -95,6 +103,23 @@ public class Simulation : MonoBehaviour
                 chunk.UpdateCollider();
             }*/
         }
+
+        if(Time.time - _lastColliderUpdate > _updateColliderFrequency)
+        {
+            GetActiveChunk()?.UpdateCollider();
+            Debug.Log(GetActiveChunk().name);
+            _lastColliderUpdate = Time.time;
+        }
+    }
+
+    public Vector2Int WorldToChunkPosition(Vector2 position)
+    {
+        return Vector2Int.RoundToInt(position / _worldChunkSize);
+    }
+
+    public Chunk GetActiveChunk(){
+        Vector2Int playerPosition = WorldToChunkPosition(player.transform.position);
+        return _chunks.ContainsKey(playerPosition) ? _chunks[playerPosition] : null;
     }
 
     public Chunk CreateChunk(Vector2Int chunkPosition)

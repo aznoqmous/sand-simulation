@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d8168a0c9732804ebd276c9978a32b7, type: 3}
-  m_Name: Sand
+  m_Name: Gravel
   m_EditorClassIdentifier: 
-  color: {r: 0.8867924, g: 0.79127634, b: 0.3890174, a: 1}
+  color: {r: 0.66666657, g: 0.66666657, b: 0.66666657, a: 1}
   movementType: 1
-  dispersion: 200
-  isSolid: 1
+  dispersion: 10
+  density: 10

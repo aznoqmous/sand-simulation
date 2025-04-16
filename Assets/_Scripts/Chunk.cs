@@ -4,13 +4,17 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-
+using System.Collections;
 public class Chunk : MonoBehaviour
 {
     [SerializeField] private ComputeShader _computeShader;
     [SerializeField] RawImage _renderImage;
+    [SerializeField] RawImage _colliderImage;
     [SerializeField] private AdvancedPolygonCollider _collider;
+
     RenderTexture _renderTexture;
+    RenderTexture _colliderTexture;
+    
     [SerializeField] SpriteRenderer _spriteRenderer;
 
     int _size = 200;
@@ -27,6 +31,8 @@ public class Chunk : MonoBehaviour
     [SerializeField] GameObject _colliderGameObject;
     [SerializeField] Canvas _canvas;
 
+    [SerializeField] Image _testImage;
+    public Image TestImage => _testImage;
     public void Init(Simulation simulation)
     {
         _simulation = simulation;
@@ -40,15 +46,36 @@ public class Chunk : MonoBehaviour
         _dispatchCount.x = Mathf.CeilToInt(_size / threadX);
         _dispatchCount.y = Mathf.CeilToInt(_size / threadY);
 
+        /**
+         * RENDER IMAGE
+         */
         _renderTexture = new RenderTexture(_size, _size, 0, RenderTextureFormat.ARGBFloat);
         _renderTexture.enableRandomWrite = true;
         _renderTexture.wrapMode = TextureWrapMode.Clamp;
         _renderTexture.filterMode = FilterMode.Point;
         _renderTexture.Create();
+
         _renderImage.texture = _renderTexture;
         _renderImage.rectTransform.sizeDelta = new Vector2(_size, _size);
-        
         _computeShader.SetTexture(_kernel, "Result", _renderTexture);
+
+        /**
+         * COLLIDER IMAGE
+         */
+        _colliderTexture = new RenderTexture(_size, _size, 0, RenderTextureFormat.ARGBFloat);
+        _colliderTexture.enableRandomWrite = true;
+        _colliderTexture.wrapMode = TextureWrapMode.Clamp;
+        _colliderTexture.filterMode = FilterMode.Point;
+        _colliderTexture.Create();
+
+        _colliderImage.texture = _colliderTexture;
+        _colliderImage.rectTransform.sizeDelta = new Vector2(_size, _size);
+        _computeShader.SetTexture(_kernel, "ColliderTexture", _colliderTexture);
+
+        /**
+         * TEST IMAGE
+         */
+        _testImage.rectTransform.sizeDelta = new Vector2(_size, _size);
 
         _computeShader.SetFloat("Size", _size);
 
@@ -59,7 +86,7 @@ public class Chunk : MonoBehaviour
         _computeShader.SetBuffer(_kernel, "RightChunkParticles", defaultBuffer);
 
         _colliderGameObject.transform.localScale = _canvas.transform.localScale * _scale;
-        _colliderGameObject.transform.position = -Vector3.one * _simulation.WorldChunkSize / 2f;
+        _colliderGameObject.transform.position = -Vector3.one * _simulation.WorldChunkSize / 2f + transform.position;
 
         InitParticles();
     }
@@ -72,10 +99,17 @@ public class Chunk : MonoBehaviour
                 Particle p = new Particle();
                 p.position = new Vector2(x, y);
                 p.realPosition = new Vector2(x, y);
-                if(Mathf.PerlinNoise(
+                float temp = Mathf.PerlinNoise(
                     (_simulation.Seed + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                     (_simulation.Seed + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
-                ) < 0.5f) p.particleType = 1;
+                );
+                float moist = Mathf.PerlinNoise(
+                    (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
+                    (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
+                );
+                if(temp < 0.3f && moist > 0.5f) p.particleType = 3;
+                else if(temp < 0.3f) p.particleType = 2;
+                else if(temp < 0.5f) p.particleType = 1;
                 _particles.Add(p);
             }
         }
@@ -86,6 +120,7 @@ public class Chunk : MonoBehaviour
             + sizeof(float) * 2 // direction
             + sizeof(float) // speed
             + sizeof(int) // type
+            + sizeof(int) // is idle
         ;
         _particlesBuffer = new ComputeBuffer(Mathf.FloorToInt(Mathf.Pow(_size, 2f)), particleSize);
         _particlesBuffer.SetData(_particles);
@@ -94,6 +129,7 @@ public class Chunk : MonoBehaviour
         int particleTypeSize = sizeof(float) * 4 // color
             + sizeof(int) // movement type
             + sizeof(float) // dispersion
+            + sizeof(int) // is solid
         ;
         List<ParticleType> particleTypes = new List<ParticleType>();
         foreach(ParticleResource particleType in _simulation.ParticleTypes)
@@ -102,16 +138,19 @@ public class Chunk : MonoBehaviour
             p.color = particleType.color;
             p.movementType = (int)particleType.movementType;
             p.dispersion = particleType.dispersion;
+            p.isSolid = particleType.isSolid ? 1 : 0;
             particleTypes.Add(p);
         }
         _particleTypesBuffer = new ComputeBuffer(_simulation.ParticleTypes.Count, particleTypeSize);
         _particleTypesBuffer.SetData(particleTypes);
         _computeShader.SetBuffer(_kernel, "Types", _particleTypesBuffer);
+
+        UpdateNeighborBuffer();
     }
 
     void Update()
     {
-        if(_kernel != 0) return;
+        if(_particlesBuffer == null) return;
         float ratio = 1f / 0.0193f;
 
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -141,33 +180,41 @@ public class Chunk : MonoBehaviour
     public Chunk BottomChunk;
     public Chunk RightChunk;
 
-    public void SetLeftChunk(Chunk chunk)
+    public void UpdateNeighborBuffer()
+    {
+        if(LeftChunk != null) SetLeftChunk(LeftChunk);
+        if(TopChunk != null) SetTopChunk(TopChunk);
+        if(BottomChunk != null) SetBottomChunk(BottomChunk);
+        if(RightChunk != null) SetRightChunk(RightChunk);
+    }
+
+    public void SetLeftChunk(Chunk chunk, bool miror=false)
     {
         if(LeftChunk != null) return;
-        _computeShader.SetBuffer(_kernel, "LeftChunkParticles", chunk.GetParticlesBuffer());
+        if(_computeShader != null) _computeShader.SetBuffer(_kernel, "LeftChunkParticles", chunk.GetParticlesBuffer());
         LeftChunk = chunk;
-        chunk.SetRightChunk(this);
+        chunk.SetRightChunk(this, true);
     }
-    public void SetTopChunk(Chunk chunk)
+    public void SetTopChunk(Chunk chunk, bool miror=false)
     {
         if(TopChunk != null) return;
-        _computeShader.SetBuffer(_kernel, "TopChunkParticles", chunk.GetParticlesBuffer());
+        if(_computeShader != null) _computeShader.SetBuffer(_kernel, "TopChunkParticles", chunk.GetParticlesBuffer());
         TopChunk = chunk;
-        chunk.SetBottomChunk(this);
+        chunk.SetBottomChunk(this, true);
     }
-    public void SetBottomChunk(Chunk chunk)
+    public void SetBottomChunk(Chunk chunk, bool miror=false)
     {
         if(BottomChunk != null) return;
-        _computeShader.SetBuffer(_kernel, "BottomChunkParticles", chunk.GetParticlesBuffer());
+        if(_computeShader != null) _computeShader.SetBuffer(_kernel, "BottomChunkParticles", chunk.GetParticlesBuffer());
         BottomChunk = chunk;
-        chunk.SetTopChunk(this);
+        chunk.SetTopChunk(this, true);
     }
-    public void SetRightChunk(Chunk chunk)
+    public void SetRightChunk(Chunk chunk, bool miror=false)
     {
         if(RightChunk != null) return;
-        _computeShader.SetBuffer(_kernel, "RightChunkParticles", chunk.GetParticlesBuffer());
+        if(_computeShader != null) _computeShader.SetBuffer(_kernel, "RightChunkParticles", chunk.GetParticlesBuffer());
         RightChunk = chunk;
-        chunk.SetLeftChunk(this);
+        chunk.SetLeftChunk(this, true);
     }
 
     public void AddNeighbor(Chunk chunk)
@@ -190,7 +237,7 @@ public class Chunk : MonoBehaviour
 
         if(_texture == null) _texture = new Texture2D(_size, _size, TextureFormat.RGBA32, false);
         
-        AsyncGPUReadback.Request(_renderTexture, 0, TextureFormat.RGBA32, (req) =>
+        AsyncGPUReadback.Request(_colliderTexture, 0, TextureFormat.RGBA32, (req) =>
         {
             if (!req.hasError)
             {
@@ -222,12 +269,13 @@ public struct Particle {
     public Vector2 direction;
     public float speed;
     public int particleType;
+    public int isIdle;
 }
 
 public struct ParticleType 
 {
     public Color color;
     public int movementType;
-
     public float dispersion;
+    public int isSolid;
 }

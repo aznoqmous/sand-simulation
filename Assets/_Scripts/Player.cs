@@ -24,7 +24,7 @@ public class Player : MonoBehaviour
 
         if(_rigidbody2D.bodyType == RigidbodyType2D.Static)
         {
-            transform.position += new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0) * Time.deltaTime * _moveSpeed;
+            transform.position += new Vector3(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical"), 0) * Time.deltaTime  * _moveSpeed / 10f;
         }
         if(Input.GetKeyDown(KeyCode.W)){
             _rigidbody2D.AddForce(Vector2.up * _jumpSpeed, ForceMode2D.Impulse);
@@ -36,6 +36,6 @@ public class Player : MonoBehaviour
         
         Vector2 speed = _rigidbody2D.linearVelocity;
         speed.x = Input.GetAxis("Horizontal");
-        _rigidbody2D.linearVelocity = speed;
+        _rigidbody2D.linearVelocity = new Vector2(speed.x * _moveSpeed / 10f, speed.y);
     }
 }

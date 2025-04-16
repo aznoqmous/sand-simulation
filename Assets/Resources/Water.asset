@@ -15,3 +15,4 @@ MonoBehaviour:
   color: {r: 0, g: 0.6326096, b: 1, a: 1}
   movementType: 2
   dispersion: 200
+  density: 5

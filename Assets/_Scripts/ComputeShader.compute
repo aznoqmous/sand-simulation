@@ -4,6 +4,8 @@
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 RWTexture2D<float4> Result;
+RWTexture2D<float4> ColliderTexture;
+
 float Size;
 float Time;
 float DeltaTime;
@@ -14,12 +16,18 @@ int MouseType;
 int BrushSize;
 float2 MousePosition;
 
+const float2 DIR_UP = float2(0.0, 1.0);
+const float2 DIR_DOWN = float2(0.0, -1.0);
+const float2 DIR_LEFT = float2(-1.0, 0.0);
+const float2 DIR_RIGHT = float2(1.0, 0.0);
+
 struct Particle {
     float2 position;
     float2 realPosition;
     float2 direction;
     float speed;
     int type;
+    int is_idle;
 };
 
 RWStructuredBuffer<Particle> Particles;
@@ -33,6 +41,7 @@ struct ParticleType {
     float4 color;
     int movementType;
     float dispersion;
+    int is_solid;
 };
 RWStructuredBuffer<ParticleType> Types;
 
@@ -79,30 +88,40 @@ void draw(float2 position, float4 color){
     Result[position] = color;
 }
 
-int positionToId(float2 position){
+int position_to_id(float2 position){
     return position.x * Size + position.y;
 }
-int positionToId(float x, float y){
+int position_to_id(float x, float y){
     return x * Size + y;
 }
 
-Particle getParticle(float2 position){
-    if(position.y < 0.0) return BottomChunkParticles[positionToId(position.x, (Size - 1.0))];
-    if(position.y > Size - 1.0) return TopChunkParticles[positionToId(position.x, 0.0)];
-    if(position.x < 0.0) return LeftChunkParticles[positionToId((Size - 1.0), position.y)];
-    if(position.x > Size - 1.0) return RightChunkParticles[positionToId(0, position.y)];
+void update_particle(float2 position, Particle p)
+{
+    if(position.y < 0.0) BottomChunkParticles[position_to_id(p.position)] = p;
+    if(position.y > Size - 1.0) TopChunkParticles[position_to_id(p.position)] = p;
+    if(position.x < 0.0) LeftChunkParticles[position_to_id(p.position)] = p;
+    if(position.x > Size - 1.0) RightChunkParticles[position_to_id(p.position)] = p;
+    Particles[position_to_id(p.position)] = p;
+}
+
+
+Particle get_particle(float2 position){
+    if(position.y < 0.0) return BottomChunkParticles[position_to_id(position.x, (Size - 1.0))];
+    if(position.y > Size - 1.0) return TopChunkParticles[position_to_id(position.x, 0.0)];
+    if(position.x < 0.0) return LeftChunkParticles[position_to_id((Size - 1.0), position.y)];
+    if(position.x > Size - 1.0) return RightChunkParticles[position_to_id(0, position.y)];
     return Particles[position.x * Size + position.y];
 }
 
-bool isEmpty(float2 position){
-    return getParticle(position).type == 0;
+bool is_empty(float2 position){
+    return get_particle(position).type == 0;
 }
 
-void eraseParticle(Particle p){
+void erase_particle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
 }
 
-void drawParticle(Particle p){
+void draw_particle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     if(p.type == 0) return;
     float4 color = Types[p.type].color;
@@ -110,31 +129,32 @@ void drawParticle(Particle p){
     float noise = 1.0;
     if(p.type == 1) // dirt
     {
-        if(isEmpty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
+        if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
         noise = unity_gradientNoise(p.position / 2.0);
     }
-    else if(p.type == 3) {
+    else if(p.type == 3) { // water
         noise = unity_gradientNoise(p.position / 2.0 + float2(Time, Time));
+        color.w = 0.5;
     }
     else {
         noise = unity_gradientNoise(p.position / 2.0);
     }
-    Result[p.position] = color * (noise * 0.6 + 1.0);
+    Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
 
-    // Result[p.position] = float4(p.direction.x, p.direction.y, 0.0, 1.0);
+    // Result[p.position] = float4(p.speed, abs(p.direction.x), abs(p.direction.y), 1.0);
 }
 
-void moveParticle(inout Particle particle, float2 movement){
+void move_particle(inout Particle particle, float2 movement){
     float2 targetPosition = particle.position + movement;
     float2 originalPosition = particle.position;
     int targetId = targetPosition.x * Size + targetPosition.y;
     int currentId = particle.position.x * Size + particle.position.y;
 
     Particle targetParticle = Particles[targetId];
-    eraseParticle(particle);
+    erase_particle(particle);
     if(targetPosition.y < 0.0){
         targetPosition.y = Size - 1.0;
-        targetId = positionToId(targetPosition);
+        targetId = position_to_id(targetPosition);
         targetParticle = BottomChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.realPosition = particle.position;
@@ -142,7 +162,7 @@ void moveParticle(inout Particle particle, float2 movement){
     }
     else if(targetPosition.y > Size - 1.0){
         targetPosition.y = 0.0;
-        targetId = positionToId(targetPosition);
+        targetId = position_to_id(targetPosition);
         targetParticle = TopChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.realPosition = particle.position;
@@ -150,7 +170,7 @@ void moveParticle(inout Particle particle, float2 movement){
     }
     else if(targetPosition.x < 0.0){
         targetPosition.x = Size - 1.0;
-        targetId = positionToId(targetPosition);
+        targetId = position_to_id(targetPosition);
         targetParticle = LeftChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.realPosition = particle.position;
@@ -158,71 +178,100 @@ void moveParticle(inout Particle particle, float2 movement){
     }
     else if(targetPosition.x > Size - 1.0){
         targetPosition.x = 0.0;
-        targetId = positionToId(targetPosition);
+        targetId = position_to_id(targetPosition);
         targetParticle = RightChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.realPosition = particle.position;
         RightChunkParticles[targetId] = particle;
     }
     else {
+        particle.position = targetPosition;
+        particle.realPosition = particle.position;
         Particles[targetId] = particle;
-        Particles[targetId].position = targetPosition;
-        drawParticle(particle);
+        draw_particle(particle);
     }
 
     targetParticle.position = originalPosition;
     targetParticle.realPosition = originalPosition;
     Particles[currentId] = targetParticle;
-
 }
 
 ParticleType get_type(Particle p){
     return Types[p.type];
 }
+ParticleType get_type(float2 position){
+    return Types[get_particle(position).type];
+}
 
-void moveToward(inout Particle p, float2 direction, float speed=5.0){
+void move_toward(inout Particle p, float2 direction, float speed=5.0){
     p.direction += direction * DeltaTime * speed;
     p.direction = normalize(p.direction);
     p.speed += speed * DeltaTime;
-    Particles[positionToId(p.position)] = p;
+    Particles[position_to_id(p.position)] = p;
 }
 
-void handleParticleMovement(inout Particle p){
+void wake_particle(float2 position){
+    Particle p = get_particle(position);
+    p.is_idle = 0;
+    update_particle(position, p);
+}
+
+void wake_neighbors(float2 position){
+    wake_particle(position + DIR_DOWN);
+    wake_particle(position + DIR_LEFT);
+    wake_particle(position + DIR_UP);
+    wake_particle(position + DIR_RIGHT);
+}
+
+void handle_particle_movement(inout Particle p){
+    p.speed *= 1 - DeltaTime;
+
+    p.is_idle = p.speed < 0.00001 ? 1 : 0;
+    if(p.is_idle == 1) {
+        Particles[position_to_id(p.position)] = p;
+        return;
+    }
+    else {
+        wake_neighbors(p.position);
+    }
+
     p.realPosition += p.direction * p.speed * DeltaTime * 10.0;
+    Particles[position_to_id(p.position)] = p;
 
     float2 mov = get_movement(p.realPosition - p.position);
     
-    if(mov.x == 0.0 && mov.y == 0.0) {
-        Particles[positionToId(p.position)] = p;
-        return;
-    }
-    if(!isEmpty(p.position + mov)){
+    if(mov.x == 0.0 && mov.y == 0.0) return;
+    
+    if(!is_empty(p.position + mov)){
         p.realPosition = p.position;
         p.direction = float2(0.0, 0.0);
         p.speed = 0.0;
-        Particles[positionToId(p.position)] = p;
+        Particles[position_to_id(p.position)] = p;
         return;
     }
     
-    moveParticle(p, mov);
+    move_particle(p, mov);
 }
 
-bool handleSand(inout Particle p)
+bool handle_sand(inout Particle p)
 {
-    if(isEmpty(p.position + float2(0.0, -1.0))){
-        moveToward(p, float2(0.0, -1.0), Gravity);
+    ParticleType t = get_type(p);
+
+    if(is_empty(p.position + float2(0.0, -1.0))){
+        move_toward(p, float2(0.0, -1.0), Gravity);
         return true;
     }
     else {
+
         float sandDispersion = get_type(p).dispersion;
-        if (isEmpty(p.position + float2(1, 0)) && isEmpty(p.position + float2(1, -1)))
+        if (is_empty(p.position + float2(1, 0)) && is_empty(p.position + float2(1, -1)))
         {
-            moveToward(p, float2(1.0, 0.0), sandDispersion);
+            move_toward(p, float2(1.0, 0.0), sandDispersion);
             return true;
         }
-        else if (isEmpty(p.position + float2(-1, 0)) && isEmpty(p.position + float2(-1, -1)))
+        else if (is_empty(p.position + float2(-1, 0)) && is_empty(p.position + float2(-1, -1)))
         {
-            moveToward(p, float2(-1.0, 0.0), sandDispersion);
+            move_toward(p, float2(-1.0, 0.0), sandDispersion);
             return true;
         }
     }
@@ -230,23 +279,23 @@ bool handleSand(inout Particle p)
     return false;
 }
 
-bool handleWater(inout Particle p){
+bool handle_water(inout Particle p){
 
-    if(!handleSand(p)){
+    if(!handle_sand(p)){
         float waterDispersion = get_type(p).dispersion;
-        if (int(rand(p.position) * 100000.0) % 2 == 0 && isEmpty(p.position + float2(1, 0)))
+        if (int(rand(p.position) * 100000.0) % 2 == 0 && is_empty(p.position + float2(1, 0)))
         {
-            moveToward(p, float2(1.0, 0.0), waterDispersion);
+            move_toward(p, float2(1.0, 0.0), waterDispersion);
             return true;
         }
-        else if (isEmpty(p.position + float2(-1, 0)))
+        else if (is_empty(p.position + float2(-1, 0)))
         {
-            moveToward(p, float2(-1.0, 0.0), waterDispersion);
+            move_toward(p, float2(-1.0, 0.0), waterDispersion);
             return true;
         }
-        else if (isEmpty(p.position + float2(1, 0)))
+        else if (is_empty(p.position + float2(1, 0)))
         {
-            moveToward(p, float2(1.0, 0.0), waterDispersion);
+            move_toward(p, float2(1.0, 0.0), waterDispersion);
             return true;
         }
     }
@@ -259,13 +308,15 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
     Particle p = Particles[id.x * Size + id.y];
+    ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
         Particles[p.position.x * Size + p.position.y].type = MouseType;
         return;
     }
 
     if(Particles[p.position.x * Size + p.position.y].type == 0) {
-        eraseParticle(p);
+        erase_particle(p);
 
         /**
         * Show chunk bounds
@@ -280,14 +331,20 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    drawParticle(p);
+    draw_particle(p);
+    
+    if(p.is_idle == 1){
+        if(get_type(p).is_solid == 1) {
+            ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
+        }
+    }
+
     if(Types[p.type].movementType == 1){
-        handleSand(p);
-        handleParticleMovement(p);
+        handle_sand(p);
     }
     if(Types[p.type].movementType == 2){
-        handleWater(p);
-        handleParticleMovement(p);
+        handle_water(p);
     }
+    handle_particle_movement(p);
 }
 
