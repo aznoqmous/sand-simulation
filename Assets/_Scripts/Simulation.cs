@@ -18,6 +18,7 @@ public class Simulation : MonoBehaviour
 
     [Header("Simulation")]
     [SerializeField] float _gravity = 9.81f;
+    [SerializeField] float _idleTime = 2.0f;
     [SerializeField] int _seed = 123456;
 
     [Header("Brush")]
@@ -30,6 +31,7 @@ public class Simulation : MonoBehaviour
 
     public int BrushSize => _brushSize;
     public float Gravity => _gravity;
+    public float IdleTime => _idleTime;
     public int Seed => _seed;
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;
@@ -86,22 +88,11 @@ public class Simulation : MonoBehaviour
         foreach(Chunk chunk in _chunks.Values)
         {
             chunk.gameObject.SetActive((player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize * 2f);
-            chunk.TestImage.enabled = false;
         }
-        Chunk c = GetActiveChunk();
-        if(c != null)
-        {
-            c.TestImage.enabled = true;
-        }
-
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
             _chunks[Vector2Int.zero].UpdateCollider();
-            /*foreach(Chunk chunk in _chunks.Values)
-            {
-                chunk.UpdateCollider();
-            }*/
         }
 
         if(Time.time - _lastColliderUpdate > _updateColliderFrequency)
@@ -110,6 +101,11 @@ public class Simulation : MonoBehaviour
             Debug.Log(GetActiveChunk().name);
             _lastColliderUpdate = Time.time;
         }
+    }
+
+    void UpdateCollider()
+    {
+        // TODO
     }
 
     public Vector2Int WorldToChunkPosition(Vector2 position)

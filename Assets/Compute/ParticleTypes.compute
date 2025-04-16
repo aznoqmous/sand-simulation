@@ -1,0 +1,21 @@
+struct Particle {
+    float2 position;
+    float2 real_position;
+    float2 direction;
+    float speed;
+    int type;
+    float idle_time;
+};
+
+struct ParticleType {
+    float4 color;
+    int movement_type;
+    float dispersion;
+    int is_solid;
+};
+
+const float2 DIR_UP = float2(0.0, 1.0);
+const float2 DIR_DOWN = float2(0.0, -1.0);
+const float2 DIR_LEFT = float2(-1.0, 0.0);
+const float2 DIR_RIGHT = float2(1.0, 0.0);
+

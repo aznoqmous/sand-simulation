@@ -1,10 +1,25 @@
-// Each #kernel tells which function to compile; you can have many kernels
 #pragma kernel CSMain
 
-// Create a RenderTexture with enableRandomWrite flag and set it
-// with cs.SetTexture
-RWTexture2D<float4> Result;
-RWTexture2D<float4> ColliderTexture;
+struct Particle {
+    float2 position;
+    float2 real_position;
+    float2 direction;
+    float speed;
+    int type;
+    float idle_time;
+};
+
+struct ParticleType {
+    float4 color;
+    int movement_type;
+    float dispersion;
+    int is_solid;
+};
+
+float2 DIR_UP = float2(0.0, 1.0);
+float2 DIR_DOWN = float2(0.0, -1.0);
+float2 DIR_LEFT = float2(-1.0, 0.0);
+float2 DIR_RIGHT = float2(1.0, 0.0);
 
 float Size;
 float Time;
@@ -16,35 +31,22 @@ int MouseType;
 int BrushSize;
 float2 ChunkPosition;
 float2 MousePosition;
+float IdleTime;
 
-const float2 DIR_UP = float2(0.0, 1.0);
-const float2 DIR_DOWN = float2(0.0, -1.0);
-const float2 DIR_LEFT = float2(-1.0, 0.0);
-const float2 DIR_RIGHT = float2(1.0, 0.0);
-
-struct Particle {
-    float2 position;
-    float2 realPosition;
-    float2 direction;
-    float speed;
-    int type;
-    int is_idle;
-};
+RWTexture2D<float4> Result;
+RWTexture2D<float4> ColliderTexture;
 
 RWStructuredBuffer<Particle> Particles;
+RWStructuredBuffer<int> States;
 
 RWStructuredBuffer<Particle> LeftChunkParticles;
 RWStructuredBuffer<Particle> TopChunkParticles;
 RWStructuredBuffer<Particle> BottomChunkParticles;
 RWStructuredBuffer<Particle> RightChunkParticles;
 
-struct ParticleType {
-    float4 color;
-    int movementType;
-    float dispersion;
-    int is_solid;
-};
-RWStructuredBuffer<ParticleType> Types;
+StructuredBuffer<ParticleType> Types;
+
+
 
 float2 unity_gradientNoise_dir(float2 p)
 {
@@ -98,11 +100,11 @@ int position_to_id(float x, float y){
 
 void update_particle(float2 position, Particle p)
 {
-    if(position.y < 0.0) BottomChunkParticles[position_to_id(p.position)] = p;
-    if(position.y > Size - 1.0) TopChunkParticles[position_to_id(p.position)] = p;
-    if(position.x < 0.0) LeftChunkParticles[position_to_id(p.position)] = p;
-    if(position.x > Size - 1.0) RightChunkParticles[position_to_id(p.position)] = p;
-    Particles[position_to_id(p.position)] = p;
+    if(position.y < 0.0) BottomChunkParticles[position_to_id(position.x, (Size - 1.0))] = p;
+    else if(position.y > Size - 1.0) TopChunkParticles[position_to_id(position.x, 0.0)] = p;
+    else if(position.x < 0.0) LeftChunkParticles[position_to_id((Size - 1.0), position.y)] = p;
+    else if(position.x > Size - 1.0) RightChunkParticles[position_to_id(0, position.y)] = p;
+    else Particles[position.x * Size + position.y] = p;
 }
 
 
@@ -112,6 +114,12 @@ Particle get_particle(float2 position){
     if(position.x < 0.0) return LeftChunkParticles[position_to_id((Size - 1.0), position.y)];
     if(position.x > Size - 1.0) return RightChunkParticles[position_to_id(0, position.y)];
     return Particles[position.x * Size + position.y];
+}
+bool is_idle(Particle p){
+    return p.idle_time >= IdleTime;
+}
+bool is_idle(float2 pos){
+    return is_idle(get_particle(pos));
 }
 
 bool is_empty(float2 position){
@@ -129,7 +137,12 @@ float get_noise(float2 input){
 void draw_particle(Particle p){
     Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     if(p.type == 0) return;
+    
     float4 color = Types[p.type].color;
+    if(is_idle(p)){
+        Result[p.position] = float4(color.xyz, 0.5);
+        return;
+    }
     
     float noise = 1.0;
     if(p.type == 1) // dirt
@@ -146,7 +159,7 @@ void draw_particle(Particle p){
     }
     Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
 
-    // Result[p.position] = float4(p.speed, abs(p.direction.x), abs(p.direction.y), 1.0);
+    //Result[p.position] = float4(p.speed, abs(p.direction.x), abs(p.direction.y), 1.0);
 }
 
 void move_particle(inout Particle particle, float2 movement){
@@ -162,7 +175,7 @@ void move_particle(inout Particle particle, float2 movement){
         targetId = position_to_id(targetPosition);
         targetParticle = BottomChunkParticles[targetId];
         particle.position = targetParticle.position;
-        particle.realPosition = particle.position;
+        particle.real_position = particle.position;
         BottomChunkParticles[targetId] = particle;
     }
     else if(targetPosition.y > Size - 1.0){
@@ -170,7 +183,7 @@ void move_particle(inout Particle particle, float2 movement){
         targetId = position_to_id(targetPosition);
         targetParticle = TopChunkParticles[targetId];
         particle.position = targetParticle.position;
-        particle.realPosition = particle.position;
+        particle.real_position = particle.position;
         TopChunkParticles[targetId] = particle;
     }
     else if(targetPosition.x < 0.0){
@@ -178,7 +191,7 @@ void move_particle(inout Particle particle, float2 movement){
         targetId = position_to_id(targetPosition);
         targetParticle = LeftChunkParticles[targetId];
         particle.position = targetParticle.position;
-        particle.realPosition = particle.position;
+        particle.real_position = particle.position;
         LeftChunkParticles[targetId] = particle;
     }
     else if(targetPosition.x > Size - 1.0){
@@ -186,18 +199,18 @@ void move_particle(inout Particle particle, float2 movement){
         targetId = position_to_id(targetPosition);
         targetParticle = RightChunkParticles[targetId];
         particle.position = targetParticle.position;
-        particle.realPosition = particle.position;
+        particle.real_position = particle.position;
         RightChunkParticles[targetId] = particle;
     }
     else {
         particle.position = targetPosition;
-        particle.realPosition = particle.position;
+        particle.real_position = particle.position;
         Particles[targetId] = particle;
         draw_particle(particle);
     }
 
     targetParticle.position = originalPosition;
-    targetParticle.realPosition = originalPosition;
+    targetParticle.real_position = originalPosition;
     Particles[currentId] = targetParticle;
 }
 
@@ -215,43 +228,51 @@ void move_toward(inout Particle p, float2 direction, float speed=5.0){
     Particles[position_to_id(p.position)] = p;
 }
 
+void wake_particle_chunk(float2 position){
+    if(position.x < 0.0) States[1] += 1;
+    else if(position.y > Size - 1.0) States[2] += 1;
+    else if(position.x > Size - 1.0) States[3] += 1;
+    else if(position.y < 0.0) States[4] += 1;
+    else States[0] += 1;
+}
 void wake_particle(float2 position){
     Particle p = get_particle(position);
-    p.is_idle = 0;
+    if(p.type == 0 || get_type(p).movement_type == 0) return;
+    p.idle_time = 0;
+    wake_particle_chunk(position);
     update_particle(position, p);
 }
 
 void wake_neighbors(float2 position){
-    wake_particle(position + DIR_DOWN);
-    wake_particle(position + DIR_LEFT);
-    wake_particle(position + DIR_UP);
-    wake_particle(position + DIR_RIGHT);
+    wake_particle(position + float2(0, -1));
+    wake_particle(position + float2(0, 1));
+    wake_particle(position + float2(-1, 0));
+    wake_particle(position + float2(1, 0));
 }
 
 void handle_particle_movement(inout Particle p){
     p.speed *= 1 - DeltaTime;
 
-    p.is_idle = p.speed < 0.00001 ? 1 : 0;
-    if(p.is_idle == 1) {
-        Particles[position_to_id(p.position)] = p;
-        return;
-    }
+    if(p.speed < 0.1) p.idle_time += DeltaTime;
     else {
+        p.real_position += p.direction * p.speed * DeltaTime * 10.0;
+        wake_particle(p.position);
         wake_neighbors(p.position);
     }
 
-    p.realPosition += p.direction * p.speed * DeltaTime * 10.0;
-    Particles[position_to_id(p.position)] = p;
+    update_particle(p.position, p);
+    
+    if(is_idle(p)) return;
 
-    float2 mov = get_movement(p.realPosition - p.position);
+    float2 mov = get_movement(p.real_position - p.position);
     
     if(mov.x == 0.0 && mov.y == 0.0) return;
     
     if(!is_empty(p.position + mov)){
-        p.realPosition = p.position;
+        p.real_position = p.position;
         p.direction = float2(0.0, 0.0);
         p.speed = 0.0;
-        Particles[position_to_id(p.position)] = p;
+        update_particle(p.position, p);
         return;
     }
     
@@ -262,12 +283,11 @@ bool handle_sand(inout Particle p)
 {
     ParticleType t = get_type(p);
 
-    if(is_empty(p.position + float2(0.0, -1.0))){
+    if(is_empty(p.position + float2(0.0, -1.0))) {
         move_toward(p, float2(0.0, -1.0), Gravity);
         return true;
     }
     else {
-
         float sandDispersion = get_type(p).dispersion;
         if (is_empty(p.position + float2(1, 0)) && is_empty(p.position + float2(1, -1)))
         {
@@ -311,12 +331,20 @@ bool handle_water(inout Particle p){
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    //Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+    if(id.x == 0 && id.y == 0){
+        States[0] = 0;
+        States[1] = 0;
+        States[2] = 0;
+        States[3] = 0;
+        States[4] = 0;
+    }
+
     Particle p = Particles[id.x * Size + id.y];
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
         Particles[p.position.x * Size + p.position.y].type = MouseType;
+        Particles[p.position.x * Size + p.position.y].idle_time = 0;
         return;
     }
 
@@ -338,16 +366,22 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     draw_particle(p);
     
-    if(p.is_idle == 1){
+    if(is_idle(p)){
         if(get_type(p).is_solid == 1) {
             ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
         }
+        return;
     }
 
-    if(Types[p.type].movementType == 1){
+
+    if(get_type(p).movement_type == 0){
+        p.idle_time = IdleTime;
+        update_particle(p.position, p);
+    }
+    if(get_type(p).movement_type == 1){
         handle_sand(p);
     }
-    if(Types[p.type].movementType == 2){
+    if(get_type(p).movement_type == 2){
         handle_water(p);
     }
     handle_particle_movement(p);

@@ -681,15 +681,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _chunkPrefab: {fileID: 4894128201866133694, guid: 85ad83c741079cb438884120afcbb2d6, type: 3}
-  _chunkSize: 256
+  _chunkSize: 128
   _chunkScale: 2
-  _activeChunkDistance: 1
+  _activeChunkDistance: 1.4
   _drawBounds: 0
   _updateColliderFrequency: 0.5
   _gravity: 98.1
+  _idleTime: 1
   _seed: 123456
   _brushSize: 10
-  _createdType: 0
+  _createdType: 2
   _particleTypes:
   - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
   - {fileID: 11400000, guid: c4f8326b81ee7b847b5a62bfe8de6200, type: 2}

@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
 using System.Collections;
+using System;
 public class Chunk : MonoBehaviour
 {
     [SerializeField] private ComputeShader _computeShader;
@@ -25,6 +26,9 @@ public class Chunk : MonoBehaviour
     
     ComputeBuffer _particlesBuffer;
     ComputeBuffer _particleTypesBuffer;
+    ComputeBuffer _statesBuffer;
+
+    bool _isActiveState = true;
 
     Simulation _simulation;
 
@@ -33,6 +37,12 @@ public class Chunk : MonoBehaviour
 
     [SerializeField] Image _testImage;
     public Image TestImage => _testImage;
+
+    int _colliderUpdatedAt = 0; // number of active particles on last update
+    int _activeParticleCount = 0;
+    float _lastUpdateTime = 0;
+    float _updateTimeout = 0.5f;
+    public int UpdateValue => Math.Abs(_colliderUpdatedAt - _activeParticleCount);
     public void Init(Simulation simulation)
     {
         _simulation = simulation;
@@ -72,6 +82,9 @@ public class Chunk : MonoBehaviour
         _colliderImage.rectTransform.sizeDelta = new Vector2(_size, _size);
         _computeShader.SetTexture(_kernel, "ColliderTexture", _colliderTexture);
 
+        _colliderGameObject.transform.localScale = _canvas.transform.localScale * _scale;
+        _colliderGameObject.transform.position = -Vector3.one * _simulation.WorldChunkSize / 2f + transform.position;
+
         /**
          * TEST IMAGE
          */
@@ -79,16 +92,18 @@ public class Chunk : MonoBehaviour
 
         _computeShader.SetFloat("Size", _size);
 
+        _statesBuffer = new ComputeBuffer(5, sizeof(int));
+        _statesBuffer.SetData(new int[5] { 0, 0, 0, 0, 0 });
+        // [self state, ...neighbors states]
+
         ComputeBuffer defaultBuffer = new ComputeBuffer(1, 4); 
         _computeShader.SetBuffer(_kernel, "LeftChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "TopChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "BottomChunkParticles", defaultBuffer);
         _computeShader.SetBuffer(_kernel, "RightChunkParticles", defaultBuffer);
+        _computeShader.SetBuffer(_kernel, "States", _statesBuffer);
         _computeShader.SetVector("ChunkPosition", transform.position / _simulation.WorldChunkSize);
-
-        _colliderGameObject.transform.localScale = _canvas.transform.localScale * _scale;
-        _colliderGameObject.transform.position = -Vector3.one * _simulation.WorldChunkSize / 2f + transform.position;
-
+        
         InitParticles();
     }
 
@@ -100,6 +115,7 @@ public class Chunk : MonoBehaviour
                 Particle p = new Particle();
                 p.position = new Vector2(x, y);
                 p.realPosition = new Vector2(x, y);
+                p.idleTime = 0f;
                 float temp = Mathf.PerlinNoise(
                     (_simulation.Seed + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                     (_simulation.Seed + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
@@ -109,7 +125,7 @@ public class Chunk : MonoBehaviour
                     (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                 );
                 if(temp > 0.5f && moist > 0.5f) p.particleType = 3;
-                else if(temp < 0.2f) p.particleType = 2;
+                if(temp < 0.2f) p.particleType = 2;
                 else if(temp < 0.4f) p.particleType = 1;
                 _particles.Add(p);
             }
@@ -117,17 +133,18 @@ public class Chunk : MonoBehaviour
 
         int particleSize = 
             sizeof(float) * 2 // position
-            + sizeof(float) * 2 // position
+            + sizeof(float) * 2 // real position
             + sizeof(float) * 2 // direction
             + sizeof(float) // speed
             + sizeof(int) // type
-            + sizeof(int) // is idle
+            + sizeof(float) // idle time
         ;
         _particlesBuffer = new ComputeBuffer(Mathf.FloorToInt(Mathf.Pow(_size, 2f)), particleSize);
         _particlesBuffer.SetData(_particles);
         _computeShader.SetBuffer(_kernel, "Particles", _particlesBuffer);
 
-        int particleTypeSize = sizeof(float) * 4 // color
+        int particleTypeSize = 
+            sizeof(float) * 4 // color
             + sizeof(int) // movement type
             + sizeof(float) // dispersion
             + sizeof(int) // is solid
@@ -144,6 +161,7 @@ public class Chunk : MonoBehaviour
         }
         _particleTypesBuffer = new ComputeBuffer(_simulation.ParticleTypes.Count, particleTypeSize);
         _particleTypesBuffer.SetData(particleTypes);
+
         _computeShader.SetBuffer(_kernel, "Types", _particleTypesBuffer);
 
         UpdateNeighborBuffer();
@@ -152,19 +170,62 @@ public class Chunk : MonoBehaviour
     void Update()
     {
         if(_particlesBuffer == null) return;
-        float ratio = 1f / 0.0193f;
 
+        float ratio = 1f / 0.0193f;
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePosition = ((mousePosition - (Vector2)transform.position) / _scale / (_size / ratio / 2f) + Vector2.one) * _size / 2f;
+
+        if(!_isActiveState && Input.GetMouseButton(0) && mousePosition.x > 0 && mousePosition.x < _size && mousePosition.y > 0 && mousePosition.y < _size)
+        {
+            SetActiveState();
+        }
+        
+        if(!_isActiveState) return;
+
         _computeShader.SetVector("MousePosition", mousePosition);
         _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
         _computeShader.SetInt("MouseType", _simulation.CreatedType);
         _computeShader.SetInt("BrushSize", _simulation.BrushSize);
+        _computeShader.SetFloat("IdleTime", _simulation.IdleTime);
         _computeShader.SetFloat("Time", Time.time);
         _computeShader.SetFloat("DeltaTime", Time.deltaTime);
         _computeShader.SetFloat("Gravity", _simulation.Gravity);
         _computeShader.Dispatch(_kernel, _dispatchCount.x, _dispatchCount.y, 1);
+        
+        UpdateState();
+    }
+
+
+    void UpdateState(){
+        if(Time.time - _lastUpdateTime < _updateTimeout) return;
+        _lastUpdateTime = Time.time;
+
+        AsyncGPUReadback.Request(_statesBuffer, (request) =>
+        {
+            if (!request.hasError)
+            {
+                // Get the data from the request
+                int[] data = request.GetData<int>().ToArray();
+                Debug.Log(name + " got states : " + data[0]);
+                _activeParticleCount = data[0];
+                if(data[0] == 0) SetActiveState(false);
+                if(data[1] > 0) LeftChunk.SetActiveState();
+                if(data[2] > 0) TopChunk.SetActiveState();
+                if(data[3] > 0) RightChunk.SetActiveState();
+                if(data[4] > 0) BottomChunk.SetActiveState();
+            }
+            else
+            {
+                Debug.LogError("AsyncGPUReadback failed.");
+            }
+        });
+    }
+
+    public void SetActiveState(bool state=true){
+        _isActiveState = state;
+        _testImage.enabled = state;
+        
     }
 
     public void SetSize(int size){
@@ -267,19 +328,3 @@ public class Chunk : MonoBehaviour
 }
 
 
-public struct Particle {
-    public Vector2 position;
-    public Vector2 realPosition;
-    public Vector2 direction;
-    public float speed;
-    public int particleType;
-    public int isIdle;
-}
-
-public struct ParticleType 
-{
-    public Color color;
-    public int movementType;
-    public float dispersion;
-    public int isSolid;
-}
