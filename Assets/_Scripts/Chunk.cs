@@ -1,10 +1,8 @@
 using System.Collections.Generic;
 using DigitalRuby.AdvancedPolygonCollider;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
-using System.Collections;
 using System;
 public class Chunk : MonoBehaviour
 {
@@ -14,9 +12,11 @@ public class Chunk : MonoBehaviour
     [SerializeField] private AdvancedPolygonCollider _collider;
 
     RenderTexture _renderTexture;
-    RenderTexture _colliderTexture;
-    
+    RenderTexture _colliderTexture;    
+    [SerializeField] SpriteRenderer _colliderSpriteRenderer;
     [SerializeField] SpriteRenderer _spriteRenderer;
+    [SerializeField] Material _material;
+    [SerializeField] MeshRenderer _meshRenderer;
 
     int _size = 200;
     int _scale = 4;
@@ -71,6 +71,11 @@ public class Chunk : MonoBehaviour
         _renderImage.texture = _renderTexture;
         _renderImage.rectTransform.sizeDelta = new Vector2(_size, _size);
         _computeShader.SetTexture(_kernel, "Result", _renderTexture);
+
+        _material = new Material(_material);
+        _material.SetTexture("_MainTex", _renderTexture);
+        _meshRenderer.materials = new Material[] { _material };
+        _meshRenderer.transform.localScale = new Vector3(_scale, _scale, 1f);
 
         /**
          * COLLIDER IMAGE
@@ -187,7 +192,7 @@ public class Chunk : MonoBehaviour
     }
 
     float _lastUpdateStateTime = 0;
-    float _updateStateTimeout = 0.5f;
+    float _updateStateTimeout = 0.1f;
     void UpdateState(){
         if(Time.time - _lastUpdateStateTime < _updateStateTimeout) return;
         _lastUpdateStateTime = Time.time;
@@ -305,7 +310,7 @@ public class Chunk : MonoBehaviour
                 _texture.LoadRawTextureData(rawData);
                 _texture.Apply();
 
-                _spriteRenderer.sprite = Sprite.Create(_texture, new Rect(0, 0, _size, _size), Vector2.zero, _scale);
+                _colliderSpriteRenderer.sprite = Sprite.Create(_texture, new Rect(0, 0, _size, _size), Vector2.zero, _scale);
                 _collider.RecalculatePolygon();
 
                 

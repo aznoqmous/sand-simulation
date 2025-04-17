@@ -163,11 +163,43 @@ void draw_particle(Particle p){
     //Result[p.position] = float4(p.speed, abs(p.direction.x), abs(p.direction.y), 1.0);
 }
 
+ParticleType get_type(Particle p){
+    return Types[p.type];
+}
+ParticleType get_type(float2 position){
+    return Types[get_particle(position).type];
+}
+
+void wake_particle_chunk(float2 position){
+    if(position.x < 0.0) States[1] += 1;
+    else if(position.y > Size - 1.0) States[2] += 1;
+    else if(position.x > Size - 1.0) States[3] += 1;
+    else if(position.y < 0.0) States[4] += 1;
+    else States[0] += 1;
+}
+
+void wake_particle(float2 position){
+    Particle p = get_particle(position);
+    if(p.type == 0 || get_type(p).movement_type == 0) return;
+    p.idle_time = 0;
+    wake_particle_chunk(position);
+    update_particle(position, p);
+}
+
+void wake_neighbors(float2 position){
+    wake_particle(position + float2(0, -1));
+    wake_particle(position + float2(0, 1));
+    wake_particle(position + float2(-1, 0));
+    wake_particle(position + float2(1, 0));
+}
+
 void move_particle(inout Particle particle, float2 movement){
     float2 targetPosition = particle.position + movement;
     float2 originalPosition = particle.position;
     int targetId = targetPosition.x * Size + targetPosition.y;
     int currentId = particle.position.x * Size + particle.position.y;
+
+    wake_particle(targetPosition);
 
     Particle targetParticle = Particles[targetId];
     erase_particle(particle);
@@ -213,43 +245,16 @@ void move_particle(inout Particle particle, float2 movement){
     targetParticle.position = originalPosition;
     targetParticle.real_position = originalPosition;
     Particles[currentId] = targetParticle;
+
 }
 
-ParticleType get_type(Particle p){
-    return Types[p.type];
-}
-ParticleType get_type(float2 position){
-    return Types[get_particle(position).type];
-}
+
 
 void move_toward(inout Particle p, float2 direction, float speed=5.0){
     p.direction += direction * DeltaTime * speed;
     p.direction = normalize(p.direction);
     p.speed += speed * DeltaTime;
     Particles[position_to_id(p.position)] = p;
-}
-
-void wake_particle_chunk(float2 position){
-    if(position.x < 0.0) States[1] += 1;
-    else if(position.y > Size - 1.0) States[2] += 1;
-    else if(position.x > Size - 1.0) States[3] += 1;
-    else if(position.y < 0.0) States[4] += 1;
-    else States[0] += 1;
-}
-
-void wake_particle(float2 position){
-    Particle p = get_particle(position);
-    if(p.type == 0 || get_type(p).movement_type == 0) return;
-    p.idle_time = 0;
-    wake_particle_chunk(position);
-    update_particle(position, p);
-}
-
-void wake_neighbors(float2 position){
-    wake_particle(position + float2(0, -1));
-    wake_particle(position + float2(0, 1));
-    wake_particle(position + float2(-1, 0));
-    wake_particle(position + float2(1, 0));
 }
 
 void handle_particle_movement(inout Particle p){
