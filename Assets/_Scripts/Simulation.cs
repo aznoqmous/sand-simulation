@@ -27,7 +27,7 @@ public class Simulation : MonoBehaviour
 
     [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
 
-    [SerializeField] Player player;
+    [SerializeField] Player _player;
 
     public int BrushSize => _brushSize;
     public float Gravity => _gravity;
@@ -40,12 +40,39 @@ public class Simulation : MonoBehaviour
     public List<ParticleResource> ParticleTypes => _particleTypes;
     public bool DrawBounds => _drawBounds;
 
+
+    ComputeBuffer _particleTypesBuffer;
+    public ComputeBuffer ParticleTypesBuffer => _particleTypesBuffer;
+
     void Start()
     {
         float ratio = 1f / 0.0193f;
         _worldChunkSize = _chunkSize / ratio * _chunkScale;
 
+        InitParticleTypes();
+
         UpdateChunks();
+    }
+
+    void InitParticleTypes(){
+        int particleTypeSize = 
+                sizeof(float) * 4 // color
+                + sizeof(int) // movement type
+                + sizeof(float) // dispersion
+                + sizeof(int) // is solid
+            ;
+            List<ParticleType> particleTypes = new List<ParticleType>();
+            foreach(ParticleResource particleType in ParticleTypes)
+            {
+                ParticleType p = new ParticleType();
+                p.color = particleType.color;
+                p.movementType = (int)particleType.movementType;
+                p.dispersion = particleType.dispersion;
+                p.isSolid = particleType.isSolid ? 1 : 0;
+                particleTypes.Add(p);
+            }
+            _particleTypesBuffer = new ComputeBuffer(ParticleTypes.Count, particleTypeSize);
+            _particleTypesBuffer.SetData(particleTypes);
     }
 
     Vector2Int GetScreenChunks()
@@ -66,7 +93,7 @@ public class Simulation : MonoBehaviour
     }
 
     void UpdateChunks(){
-        Vector3 playerPosition = player.transform.position / _worldChunkSize;
+        Vector3 playerPosition = _player.transform.position / _worldChunkSize;
         Vector2Int activeChunks = GetActiveChunks();
         for(int x = Mathf.FloorToInt(playerPosition.x) - activeChunks.x; x <= activeChunks.x; x++)
         {
@@ -87,7 +114,7 @@ public class Simulation : MonoBehaviour
         UpdateChunks();
         foreach(Chunk chunk in _chunks.Values)
         {
-            chunk.gameObject.SetActive((player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize * 2f);
+            chunk.gameObject.SetActive((_player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize * 2f);
         }
 
         if(Input.GetKeyDown(KeyCode.Space))
@@ -95,17 +122,61 @@ public class Simulation : MonoBehaviour
             _chunks[Vector2Int.zero].UpdateCollider();
         }
 
-        if(Time.time - _lastColliderUpdate > _updateColliderFrequency)
-        {
-            GetActiveChunk()?.UpdateCollider();
-            Debug.Log(GetActiveChunk().name);
-            _lastColliderUpdate = Time.time;
-        }
+        
+        UpdateColliders();
+        // GetActiveChunk()?.UpdateCollider();
+        // Debug.Log(GetActiveChunk().name);
+        // _lastColliderUpdate = Time.time;
+        
     }
 
-    void UpdateCollider()
+    List<Chunk> _sortedChunks;
+    void UpdateColliders()
     {
+        if(Time.time - _lastColliderUpdate < _updateColliderFrequency) return;
+
         // TODO
+        _lastColliderUpdate = Time.time;
+        _sortedChunks = new List<Chunk>();
+        foreach(Chunk chunk in _chunks.Values){
+            // if(!chunk.gameObject.activeInHierarchy) return;
+            if(!chunk.NeedsUpdate) {
+                chunk.TestImage.enabled = false;
+                continue;
+            }
+            chunk.SortValue = chunk.UpdateCollisionValue / 10f;
+            // chunk.SortValue += chunk.TimeSinceLastUpdateColliderTime / 5f;
+            if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 1f;
+            chunk.SortValue *= 1f / ((_player.transform.position - chunk.transform.position).magnitude / 10f + 1f);
+            if(chunk.SortValue < 0.1f) {
+                chunk.TestImage.enabled = false;
+                continue;
+            }
+            _sortedChunks.Add(chunk);
+            
+            Color c = Color.red;
+            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) /2f;
+            chunk.TestImage.color = c;
+            chunk.TestImage.enabled = true;
+        }
+
+        if(_sortedChunks.Count == 0){
+            Debug.Log("No chunks to update");
+            return;
+        }
+        _sortedChunks.Sort((Chunk a, Chunk b)=> Mathf.RoundToInt(b.SortValue - a.SortValue));
+        Chunk chosen = _sortedChunks.First();
+
+        Debug.Log("Chunks requesting update : " + _sortedChunks.Count);
+        Debug.Log("Chosen chunk : " + chosen.name + " with value " + chosen.SortValue);
+
+        Color color = Color.green;
+        color.a = Mathf.Min(chosen.SortValue / 10.0f, 1) /2f;
+        chosen.TestImage.color = color;
+        chosen.TestImage.enabled = true;
+
+        chosen.UpdateCollider();
+
     }
 
     public Vector2Int WorldToChunkPosition(Vector2 position)
@@ -114,7 +185,7 @@ public class Simulation : MonoBehaviour
     }
 
     public Chunk GetActiveChunk(){
-        Vector2Int playerPosition = WorldToChunkPosition(player.transform.position);
+        Vector2Int playerPosition = WorldToChunkPosition(_player.transform.position);
         return _chunks.ContainsKey(playerPosition) ? _chunks[playerPosition] : null;
     }
 
@@ -163,6 +234,15 @@ public class Simulation : MonoBehaviour
             }
         }
         return neighbors;
+    }
+
+    public void OnDestroy()
+    {
+        if (_particleTypesBuffer != null)
+        {
+            _particleTypesBuffer.Release();
+            _particleTypesBuffer = null;
+        }   
     }
 }
 

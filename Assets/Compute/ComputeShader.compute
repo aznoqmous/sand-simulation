@@ -32,6 +32,7 @@ int BrushSize;
 float2 ChunkPosition;
 float2 MousePosition;
 float IdleTime;
+int Step;
 
 RWTexture2D<float4> Result;
 RWTexture2D<float4> ColliderTexture;
@@ -235,6 +236,7 @@ void wake_particle_chunk(float2 position){
     else if(position.y < 0.0) States[4] += 1;
     else States[0] += 1;
 }
+
 void wake_particle(float2 position){
     Particle p = get_particle(position);
     if(p.type == 0 || get_type(p).movement_type == 0) return;
@@ -328,18 +330,33 @@ bool handle_water(inout Particle p){
     return false;
 }
 
+void InitChunkStates(){
+    States[0] = 0; // particles - self
+    States[1] = 0; // particles - left
+    States[2] = 0; // particles - top
+    States[3] = 0; // particles - right
+    States[4] = 0; // particles - bottom
+
+    States[5] = 0; // collision - self
+    // States[6] = 0; // collision - left
+    // States[7] = 0; // collision - top
+    // States[8] = 0; // collision - right
+    // States[9] = 0; // collision - bottom
+}
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
-    if(id.x == 0 && id.y == 0){
-        States[0] = 0;
-        States[1] = 0;
-        States[2] = 0;
-        States[3] = 0;
-        States[4] = 0;
-    }
+    // Alternate particle direction on each frame
+    uint3 current_step = id.xyz;
+    // if(Step == 1 ) current_step = uint3(Size - current_step.x, Size - current_step.y, current_step.z);
+    // if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
+    // if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
 
-    Particle p = Particles[id.x * Size + id.y];
+    // Reset chunk states each frame
+    if(current_step.x == 0 && current_step.y == 0) InitChunkStates();
+
+    Particle p = Particles[current_step.x * Size + current_step.y];
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
@@ -355,11 +372,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         * Show chunk bounds
         **/
         if(DrawBounds){
-            //Result[id.xy] = float4(1,1,1,0.1);
-            if(id.x == 0) Result[id.xy] = float4(1,1,1,1);
-            if(id.x >= (Size - 1.0)) Result[id.xy] = float4(1,1,1,1);
-            if(id.y == 0) Result[id.xy] = float4(1,1,1,1);
-            if(id.y >= (Size - 1.0)) Result[id.xy] = float4(1,1,1,1);
+            //Result[current_step.xy] = float4(1,1,1,0.1);
+            if(current_step.x == 0) Result[current_step.xy] = float4(1,1,1,1);
+            if(current_step.x >= (Size - 1.0)) Result[current_step.xy] = float4(1,1,1,1);
+            if(current_step.y == 0) Result[current_step.xy] = float4(1,1,1,1);
+            if(current_step.y >= (Size - 1.0)) Result[current_step.xy] = float4(1,1,1,1);
         }
         return;
     }
@@ -369,6 +386,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if(is_idle(p)){
         if(get_type(p).is_solid == 1) {
             ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
+            States[5] += 1;
         }
         return;
     }

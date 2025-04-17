@@ -126,6 +126,7 @@ MonoBehaviour:
   _colliderGameObject: {fileID: 5632253450793541327}
   _canvas: {fileID: 6348096714634071956}
   _testImage: {fileID: 2075584136885015762}
+  SortValue: 0
   LeftChunk: {fileID: 0}
   TopChunk: {fileID: 0}
   BottomChunk: {fileID: 0}
@@ -388,15 +389,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AlphaTolerance: 10
-  DistanceThreshold: 1
+  DistanceThreshold: 0
   Scale: 1
-  Decompose: 0
+  Decompose: 1
   RunInPlayMode: 0
   UseCache: 0
   lastAlphaTolerance: 10
   lastScale: 1
-  lastDistanceThreshold: 1
-  lastDecompose: 0
+  lastDistanceThreshold: 0
+  lastDecompose: 1
   lastSprite: {fileID: 0}
   lastRect:
     serializedVersion: 2
@@ -467,7 +468,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0, b: 0, a: 0.39215687}
+  m_Color: {r: 1, g: 0, b: 0, a: 0.5882353}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
