@@ -139,32 +139,33 @@ public class Simulation : MonoBehaviour
         _lastColliderUpdate = Time.time;
         _sortedChunks = new List<Chunk>();
         foreach(Chunk chunk in _chunks.Values){
+            chunk.TestImage.enabled = false;
+            chunk.DebugText.enabled = false;
             // if(!chunk.gameObject.activeInHierarchy) return;
-            if(!chunk.NeedsUpdate) {
-                chunk.TestImage.enabled = false;
-                continue;
-            }
-            chunk.SortValue = chunk.UpdateCollisionValue / 10f;
+            if(!chunk.NeedsUpdate) continue;
+            
+            chunk.SortValue = chunk.UpdateCollisionValue / 100f;
             // chunk.SortValue += chunk.TimeSinceLastUpdateColliderTime / 5f;
-            if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 1f;
-            chunk.SortValue *= 1f / ((_player.transform.position - chunk.transform.position).magnitude / 10f + 1f);
-            if(chunk.SortValue < 0.1f) {
-                chunk.TestImage.enabled = false;
-                continue;
-            }
+            if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 10f;
+            chunk.SortValue *= 1f / ((_player.transform.position - chunk.transform.position).magnitude / 5f + 1f);
+
+            if(chunk.SortValue < 0.1f) continue;
+
             _sortedChunks.Add(chunk);
             
             Color c = Color.red;
-            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) /2f;
+            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) / 10f;
             chunk.TestImage.color = c;
             chunk.TestImage.enabled = true;
+            chunk.DebugText.enabled = true;
+            chunk.DebugText.text = chunk.SortValue.ToString();
         }
 
         if(_sortedChunks.Count == 0){
             Debug.Log("No chunks to update");
             return;
         }
-        _sortedChunks.Sort((Chunk a, Chunk b)=> Mathf.RoundToInt(b.SortValue - a.SortValue));
+        _sortedChunks.Sort((Chunk a, Chunk b)=> Mathf.RoundToInt(b.SortValue * 100f - a.SortValue * 100f));
         Chunk chosen = _sortedChunks.First();
 
         Debug.Log("Chunks requesting update : " + _sortedChunks.Count);

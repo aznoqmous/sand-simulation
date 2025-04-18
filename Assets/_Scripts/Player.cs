@@ -6,6 +6,7 @@ public class Player : MonoBehaviour
     [SerializeField] float _moveSpeed = 10f;
     [SerializeField] float _jumpSpeed = 20f;
     [SerializeField] Rigidbody2D _rigidbody2D;
+    [SerializeField] SpriteRenderer _sprite;
 
     void Start()
     {
@@ -37,5 +38,7 @@ public class Player : MonoBehaviour
         Vector2 speed = _rigidbody2D.linearVelocity;
         speed.x = Input.GetAxis("Horizontal");
         _rigidbody2D.linearVelocity = new Vector2(speed.x * _moveSpeed / 10f, speed.y);
+
+        _sprite.transform.localScale = new Vector3(speed.x < 0 ? -1 : 1, 1, 1);
     }
 }

@@ -47,7 +47,9 @@ RWStructuredBuffer<Particle> RightChunkParticles;
 
 StructuredBuffer<ParticleType> Types;
 
-
+void increment_solid_particles_count(){
+    InterlockedAdd(States[5], 1);
+}
 
 float2 unity_gradientNoise_dir(float2 p)
 {
@@ -140,10 +142,10 @@ void draw_particle(Particle p){
     if(p.type == 0) return;
     
     float4 color = Types[p.type].color;
-    if(is_idle(p)){
-        Result[p.position] = float4(color.xyz, 0.5);
-        return;
-    }
+    // if(is_idle(p)){
+    //     Result[p.position] = float4(color.xyz, 0.5);
+    //     return;
+    // }
     
     float noise = 1.0;
     if(p.type == 1) // dirt
@@ -171,11 +173,11 @@ ParticleType get_type(float2 position){
 }
 
 void wake_particle_chunk(float2 position){
-    if(position.x < 0.0) States[1] += 1;
-    else if(position.y > Size - 1.0) States[2] += 1;
-    else if(position.x > Size - 1.0) States[3] += 1;
-    else if(position.y < 0.0) States[4] += 1;
-    else States[0] += 1;
+    if(position.x < 0.0) InterlockedAdd(States[1], 1);
+    else if(position.y > Size - 1.0) InterlockedAdd(States[2], 1);
+    else if(position.x > Size - 1.0) InterlockedAdd(States[3], 1);
+    else if(position.y < 0.0) InterlockedAdd(States[4], 1);
+    else InterlockedAdd(States[0], 1);
 }
 
 void wake_particle(float2 position){
@@ -358,9 +360,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
     // if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
 
-    // Reset chunk states each frame
-    if(current_step.x == 0 && current_step.y == 0) InitChunkStates();
-
     Particle p = Particles[current_step.x * Size + current_step.y];
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     
@@ -386,12 +385,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         return;
     }
 
+
     draw_particle(p);
     
     if(is_idle(p)){
         if(get_type(p).is_solid == 1) {
             ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
-            States[5] += 1;
+            increment_solid_particles_count();
         }
         return;
     }

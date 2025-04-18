@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UI;
 using System;
+using TMPro;
 public class Chunk : MonoBehaviour
 {
     [SerializeField] private ComputeShader _computeShader;
@@ -17,7 +18,7 @@ public class Chunk : MonoBehaviour
     [SerializeField] SpriteRenderer _spriteRenderer;
     [SerializeField] Material _material;
     [SerializeField] MeshRenderer _meshRenderer;
-
+    [SerializeField] TextMeshProUGUI _debugText;
     int _size = 200;
     int _scale = 4;
 
@@ -43,7 +44,10 @@ public class Chunk : MonoBehaviour
 
     public bool NeedsUpdate => _solidParticleCount != _colliderParticleCount;
     public int UpdateCollisionValue => Math.Abs(_colliderParticleCount - _solidParticleCount);
+
+    public int SolidParticleCount => _solidParticleCount;
     public float SortValue = 0f;
+    public TextMeshProUGUI DebugText => _debugText;
 
     int _step = 0;    
     public void Init(Simulation simulation)
@@ -75,7 +79,7 @@ public class Chunk : MonoBehaviour
         _material = new Material(_material);
         _material.SetTexture("_MainTex", _renderTexture);
         _meshRenderer.materials = new Material[] { _material };
-        _meshRenderer.transform.localScale = new Vector3(_scale, _scale, 1f);
+        _meshRenderer.transform.localScale = new Vector3(_simulation.WorldChunkSize / 2f, _simulation.WorldChunkSize / 2f, 1f);
 
         /**
          * COLLIDER IMAGE
@@ -134,9 +138,11 @@ public class Chunk : MonoBehaviour
                     (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                     (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                 );
-                if(temp > 0.5f && moist > 0.5f) p.particleType = 3;
-                if(temp < 0.2f) p.particleType = 2;
-                else if(temp < 0.4f) p.particleType = 1;
+                if(temp > 0.5f && moist > 0.5f) p.particleType = 3; // water
+                if(temp < 0.2f) p.particleType = 2; // sand
+                else if(temp < 0.4f) {
+                    p.particleType = 1; // earth
+                }
                 _particles.Add(p);
             }
         }
@@ -156,7 +162,10 @@ public class Chunk : MonoBehaviour
 
         _computeShader.SetBuffer(_kernel, "Types", _simulation.ParticleTypesBuffer);
 
+        _computeShader.SetBool("ResetSolidParticleCount", true);
+
         UpdateNeighborBuffer();
+
     }
 
     void Update()
@@ -176,6 +185,8 @@ public class Chunk : MonoBehaviour
 
         _step = (_step + 1) % 4;
 
+
+        _statesBuffer.SetData(new int[6] { 0, 0, 0, 0, 0, 0 });
         _computeShader.SetVector("MousePosition", mousePosition);
         _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
@@ -187,7 +198,7 @@ public class Chunk : MonoBehaviour
         _computeShader.SetFloat("Gravity", _simulation.Gravity);
         _computeShader.SetInt("Step", _step);
         _computeShader.Dispatch(_kernel, _dispatchCount.x, _dispatchCount.y, 1);
-        
+
         UpdateState();
     }
 
@@ -203,7 +214,7 @@ public class Chunk : MonoBehaviour
             {
                 // Get the data from the request
                 int[] data = request.GetData<int>().ToArray();
-                // Debug.Log(name + " got states : " + data[5]);
+                Debug.Log(data[0] + " " + data[1] + " " + data[2] + " " + data[3] + " " + data[4] + " " + data[5]);
                 _activeParticleCount = data[0];
                 _solidParticleCount = data[5];
                 if(_activeParticleCount == 0) SetActiveState(false);
