@@ -164,20 +164,20 @@ public class Simulation : MonoBehaviour
         foreach(Chunk chunk in _chunks.Values){
             chunk.TestImage.enabled = false;
             chunk.DebugText.enabled = false;
-            if(!chunk.gameObject.activeInHierarchy) continue;
             if(!chunk.NeedsUpdate) continue;
             
-            chunk.SortValue = chunk.UpdateCollisionValue / 100f;
-            // chunk.SortValue += chunk.TimeSinceLastUpdateColliderTime / 5f;
-            if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 10f;
-            chunk.SortValue *= 1f / ((_player.transform.position - chunk.transform.position).magnitude / 5f + 1f);
+            chunk.SortValue = 0;
+            if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 100f;
+            else chunk.SortValue += chunk.UpdateCollisionValue / 10f;
+            float distanceScore = 1f / ((_player.transform.position - chunk.transform.position).magnitude + 1f);
+            chunk.SortValue *= distanceScore * distanceScore;
 
             if(chunk.SortValue < 0.1f) continue;
 
             _sortedChunks.Add(chunk);
             
             Color c = Color.red;
-            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) / 10f;
+            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) / 100f;
             chunk.TestImage.color = c;
             chunk.TestImage.enabled = true;
             chunk.DebugText.enabled = true;

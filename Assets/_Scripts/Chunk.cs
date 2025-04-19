@@ -359,6 +359,8 @@ public class Chunk : MonoBehaviour
         if(_renderTexture != null){
             _renderTexture.Release();
         }
+        if(_statesBuffer != null) _statesBuffer.Release();
+
     }
 }
 

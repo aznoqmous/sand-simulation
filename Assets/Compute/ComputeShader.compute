@@ -359,9 +359,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // Alternate particle direction on each frame
     uint3 current_step = id.xyz;
-    // if(Step == 1 ) current_step = uint3(Size - current_step.x, Size - current_step.y, current_step.z);
-    // if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
-    // if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
+    if(Step == 1 ) current_step = uint3(Size - current_step.x, Size - current_step.y, current_step.z);
+    if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
+    if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
 
     Particle p = Particles[current_step.x * Size + current_step.y];
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
