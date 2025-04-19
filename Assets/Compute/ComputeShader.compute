@@ -50,6 +50,9 @@ StructuredBuffer<ParticleType> Types;
 void increment_solid_particles_count(){
     InterlockedAdd(States[5], 1);
 }
+void increment_particles_count(){
+    InterlockedAdd(States[6], 1);
+}
 
 float2 unity_gradientNoise_dir(float2 p)
 {
@@ -387,7 +390,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
 
     draw_particle(p);
-    
+    increment_particles_count();
+
     if(is_idle(p)){
         if(get_type(p).is_solid == 1) {
             ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);

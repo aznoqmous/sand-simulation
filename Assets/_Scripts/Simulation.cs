@@ -13,33 +13,40 @@ public class Simulation : MonoBehaviour
     [SerializeField] int _chunkScale = 4;
     [SerializeField] float _activeChunkDistance = 1.5f;
     [SerializeField] bool _drawBounds = false;
+    [SerializeField] bool _generateColliders = false;
     [SerializeField] float _updateColliderFrequency = 0.5f;
+    public bool DrawBounds => _drawBounds;
+    public float UpdateColliderFrequency => _updateColliderFrequency;
+
     float _lastColliderUpdate = 0f;
 
     [Header("Simulation")]
     [SerializeField] float _gravity = 9.81f;
     [SerializeField] float _idleTime = 2.0f;
     [SerializeField] int _seed = 123456;
+    public float Gravity => _gravity;
+    public float IdleTime => _idleTime;
+    public int Seed => _seed;
 
     [Header("Brush")]
     [SerializeField] int _brushSize = 10;
+    public int BrushSize => _brushSize;
+
     [SerializeField] int _createdType = 1;
+    public int CreatedType => _createdType;
 
     [SerializeField] List<ParticleResource> _particleTypes = new List<ParticleResource>();
 
     [SerializeField] Player _player;
 
-    public int BrushSize => _brushSize;
-    public float Gravity => _gravity;
-    public float IdleTime => _idleTime;
-    public int Seed => _seed;
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;
-    public float UpdateColliderFrequency => _updateColliderFrequency;
-    public int CreatedType => _createdType;
-    public List<ParticleResource> ParticleTypes => _particleTypes;
-    public bool DrawBounds => _drawBounds;
+    int _particleCount = 0;
+    public int ParticleCount => _particleCount;
+    int _activeParticleCount = 0;
+    public int ActiveParticleCount => _activeParticleCount;
 
+    public List<ParticleResource> ParticleTypes => _particleTypes;
 
     ComputeBuffer _particleTypesBuffer;
     public ComputeBuffer ParticleTypesBuffer => _particleTypesBuffer;
@@ -87,19 +94,22 @@ public class Simulation : MonoBehaviour
     Vector2Int GetActiveChunks()
     {
         return new Vector2Int(
-            Mathf.RoundToInt(_activeChunkDistance) + 1,
-            Mathf.RoundToInt(_activeChunkDistance) + 1
+            Mathf.RoundToInt(_activeChunkDistance) * 2,
+            Mathf.RoundToInt(_activeChunkDistance) * 2
         );
     }
 
     void UpdateChunks(){
+
         Vector3 playerPosition = _player.transform.position / _worldChunkSize;
         Vector2Int activeChunks = GetActiveChunks();
-        for(int x = Mathf.FloorToInt(playerPosition.x) - activeChunks.x; x <= activeChunks.x; x++)
+        for(int x = - activeChunks.x; x <= activeChunks.x; x++)
         {
-            for (int y = Mathf.FloorToInt(playerPosition.y) - activeChunks.y; y <= activeChunks.y; y++)
+            for (int y = - activeChunks.y; y <= activeChunks.y; y++)
             {
                 Vector2Int position = new Vector2Int(x, y);
+                position += Vector2Int.FloorToInt(playerPosition);
+                if(!IsChunkActive(((Vector2)position) * _worldChunkSize)) continue;
                 if (!_chunks.ContainsKey(position))
                 {
                     Chunk newChunk = CreateChunk(position);
@@ -107,15 +117,30 @@ public class Simulation : MonoBehaviour
                 }
             }
         }
+
+        int particleCount = 0;
+        int activeParticleCount = 0;
+        foreach(Chunk chunk in _chunks.Values)
+        {
+            chunk.gameObject.SetActive(IsChunkActive(chunk.transform.position));
+            if(chunk.gameObject.activeInHierarchy) {
+                particleCount += chunk.ParticleCount;
+                activeParticleCount += chunk.ActiveParticleCount;
+            }
+        }
+        _particleCount = particleCount;
+        _activeParticleCount = activeParticleCount;
     }
+
+    bool IsChunkActive(Vector2 position){
+        return ((Vector2)_player.transform.position - position).magnitude < _activeChunkDistance * _worldChunkSize * 2f;
+    }
+
 
     void Update()
     {
         UpdateChunks();
-        foreach(Chunk chunk in _chunks.Values)
-        {
-            chunk.gameObject.SetActive((_player.transform.position - chunk.transform.position).magnitude < _activeChunkDistance * _worldChunkSize * 2f);
-        }
+
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
@@ -124,15 +149,13 @@ public class Simulation : MonoBehaviour
 
         
         UpdateColliders();
-        // GetActiveChunk()?.UpdateCollider();
-        // Debug.Log(GetActiveChunk().name);
-        // _lastColliderUpdate = Time.time;
         
     }
 
     List<Chunk> _sortedChunks;
     void UpdateColliders()
     {
+        if(!_generateColliders) return;
         if(Time.time - _lastColliderUpdate < _updateColliderFrequency) return;
 
         // TODO
@@ -162,14 +185,14 @@ public class Simulation : MonoBehaviour
         }
 
         if(_sortedChunks.Count == 0){
-            Debug.Log("No chunks to update");
+            // Debug.Log("No chunks to update");
             return;
         }
         _sortedChunks.Sort((Chunk a, Chunk b)=> Mathf.RoundToInt(b.SortValue * 100f - a.SortValue * 100f));
         Chunk chosen = _sortedChunks.First();
 
-        Debug.Log("Chunks requesting update : " + _sortedChunks.Count);
-        Debug.Log("Chosen chunk : " + chosen.name + " with value " + chosen.SortValue);
+        // Debug.Log("Chunks requesting update : " + _sortedChunks.Count);
+        // Debug.Log("Chosen chunk : " + chosen.name + " with value " + chosen.SortValue);
 
         Color color = Color.green;
         color.a = Mathf.Min(chosen.SortValue / 10.0f, 1) /2f;
@@ -201,7 +224,7 @@ public class Simulation : MonoBehaviour
         chunk.SetSize(_chunkSize);
         chunk.SetScale(_chunkScale);
         chunk.Init(this);
-        chunk.name = $"Chunk {position.x} {position.y}";
+        chunk.name = $"Chunk[{position.x},{position.y}]";
 
         if (_chunks.ContainsKey(position))
         {
@@ -217,6 +240,7 @@ public class Simulation : MonoBehaviour
                 neighbor.AddNeighbor(chunk);
             }
         }
+        Debug.Log($"Added {chunk.name}, simulation has {_chunks.Count} chunks.");
     }
 
     public List<Chunk> GetNeighbors(Vector2Int position)
