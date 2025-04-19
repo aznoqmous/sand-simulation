@@ -34,6 +34,7 @@ public class Player : MonoBehaviour
 
         _sprite.transform.localScale = new Vector3(Input.GetAxis("Horizontal") < 0 ? -1 : 1, 1, 1);
     }
+    
     void FixedUpdate()
     {
         if(_rigidbody2D.bodyType == RigidbodyType2D.Static) return;

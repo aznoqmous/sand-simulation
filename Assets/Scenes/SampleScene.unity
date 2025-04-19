@@ -1163,7 +1163,7 @@ MonoBehaviour:
   _chunkScale: 2
   _activeChunkDistance: 1.4
   _drawBounds: 0
-  _generateColliders: 0
+  _generateColliders: 1
   _updateColliderFrequency: 0.5
   _gravity: 98.1
   _idleTime: 1

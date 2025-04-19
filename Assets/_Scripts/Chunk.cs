@@ -187,7 +187,6 @@ public class Chunk : MonoBehaviour
 
         _step = (_step + 1) % 4;
 
-
         _statesBuffer.SetData(new int[7] { 0, 0, 0, 0, 0, 0, 0 });
         _computeShader.SetVector("MousePosition", mousePosition);
         _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
@@ -204,8 +203,6 @@ public class Chunk : MonoBehaviour
         UpdateState();
     }
 
-    float _lastUpdateStateTime = 0;
-    float _updateStateTimeout = 0.1f;
     bool _isUpdatingState = false;
     void UpdateState(){
         //if(Time.time - _lastUpdateStateTime < _updateStateTimeout) return;
@@ -321,7 +318,7 @@ public class Chunk : MonoBehaviour
             {
                 AdvancedPolygonCollider tempCollider = Instantiate(_collider, transform);
 
-                var rawData = req.GetData<Color32>();
+                var rawData = req.GetData<Color>();
                 _texture.LoadRawTextureData(rawData);
                 _texture.Apply();
 

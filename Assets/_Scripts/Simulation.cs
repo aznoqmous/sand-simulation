@@ -144,7 +144,7 @@ public class Simulation : MonoBehaviour
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            _chunks[Vector2Int.zero].UpdateCollider();
+            GetActiveChunk()?.UpdateCollider();
         }
 
         
@@ -164,7 +164,7 @@ public class Simulation : MonoBehaviour
         foreach(Chunk chunk in _chunks.Values){
             chunk.TestImage.enabled = false;
             chunk.DebugText.enabled = false;
-            // if(!chunk.gameObject.activeInHierarchy) return;
+            if(!chunk.gameObject.activeInHierarchy) continue;
             if(!chunk.NeedsUpdate) continue;
             
             chunk.SortValue = chunk.UpdateCollisionValue / 100f;
@@ -240,7 +240,7 @@ public class Simulation : MonoBehaviour
                 neighbor.AddNeighbor(chunk);
             }
         }
-        Debug.Log($"Added {chunk.name}, simulation has {_chunks.Count} chunks.");
+        // Debug.Log($"Added {chunk.name}, simulation has {_chunks.Count} chunks.");
     }
 
     public List<Chunk> GetNeighbors(Vector2Int position)

@@ -35,6 +35,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Xml;
 using UnityEngine;
 
 namespace DigitalRuby.AdvancedPolygonCollider
@@ -72,6 +73,7 @@ namespace DigitalRuby.AdvancedPolygonCollider
             solidsLength = colors.Length;
 
             List<Vertices> detectedVerticesList = DetectVertices();
+
             List<Vertices> result = new List<Vertices>();
 
             for (int i = 0; i < detectedVerticesList.Count; i++)
@@ -88,7 +90,6 @@ namespace DigitalRuby.AdvancedPolygonCollider
             Vector2? holeEntrance = null;
             Vector2? polygonEntrance = null;
             List<Vector2> blackList = new List<Vector2>();
-
             bool searchOn;
             do
             {
@@ -112,13 +113,14 @@ namespace DigitalRuby.AdvancedPolygonCollider
                     break;
                 }
                 searchOn = false;
-
+                
                 if (polygon.Count > 2)
                 {
                     do
                     {
-                        holeEntrance = SearchHoleEntrance(polygon, holeEntrance);
 
+
+                        holeEntrance = SearchHoleEntrance(polygon, holeEntrance);
                         if (holeEntrance.HasValue)
                         {
                             if (!blackList.Contains(holeEntrance.Value))
@@ -681,9 +683,14 @@ namespace DigitalRuby.AdvancedPolygonCollider
                 hullArea.Add(entrance);
 
                 Vector2 next = entrance;
-
+                int iterations = 0;
                 do
                 {
+                    iterations++;
+                    if(iterations > 1000) {
+                        // UnityEngine.Debug.LogError("STOPPED AFTER MAX ITERATIONS");
+                        break;
+                    }
                     // Search in the pre vision list for an outstanding point.
                     Vector2 outstanding;
                     if (SearchForOutstandingVertex(hullArea, out outstanding))
@@ -717,12 +724,21 @@ namespace DigitalRuby.AdvancedPolygonCollider
                     {
                         // Add the vertex to a hull pre vision list.
                         hullArea.Add(next);
+
+                        // // ADDED
+                        // endOfHull = true;
+                        // endOfHullArea.AddRange(hullArea);
+                        // if (endOfHullArea.Contains(entrance))
+                        //     endOfHullArea.Remove(entrance);
+                        // // ADDED
                     }
                     else
                     {
                         // Quit
                         break;
                     }
+
+
 
                     if (next == entrance && !endOfHull)
                     {
@@ -736,6 +752,8 @@ namespace DigitalRuby.AdvancedPolygonCollider
                     }
 
                 } while (true);
+                // UnityEngine.Debug.Log("ITERATIONS " + iterations);
+
             }
 
             return polygon;

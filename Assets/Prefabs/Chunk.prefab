@@ -500,14 +500,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AlphaTolerance: 10
-  DistanceThreshold: 0
+  DistanceThreshold: 2
   Scale: 1
   Decompose: 0
   RunInPlayMode: 0
   UseCache: 0
   lastAlphaTolerance: 10
   lastScale: 1
-  lastDistanceThreshold: 0
+  lastDistanceThreshold: 2
   lastDecompose: 0
   lastSprite: {fileID: 0}
   lastRect:
@@ -556,7 +556,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 3.4}
-  m_SizeDelta: {x: 200, y: 50}
+  m_SizeDelta: {x: 50.56, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6772331898726901964
 CanvasRenderer:
