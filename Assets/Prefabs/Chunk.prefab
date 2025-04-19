@@ -500,14 +500,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AlphaTolerance: 10
-  DistanceThreshold: 2
+  DistanceThreshold: 0
   Scale: 1
   Decompose: 0
   RunInPlayMode: 0
   UseCache: 0
   lastAlphaTolerance: 10
   lastScale: 1
-  lastDistanceThreshold: 2
+  lastDistanceThreshold: 0
   lastDecompose: 0
   lastSprite: {fileID: 0}
   lastRect:

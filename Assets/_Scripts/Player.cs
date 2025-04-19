@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
-    [SerializeField] float _scrollSpeed = 1f;
     [SerializeField] float _moveSpeed = 10f;
     [SerializeField] float _jumpSpeed = 20f;
     [SerializeField] Rigidbody2D _rigidbody2D;
@@ -16,7 +15,7 @@ public class Player : MonoBehaviour
     void Update()
     {
         Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(transform.position.x, transform.position.y, Camera.main.transform.position.z), Time.deltaTime * 2f);
-        Camera.main.orthographicSize -= Input.GetAxis("Mouse ScrollWheel") * _scrollSpeed;
+
         
         if(Input.GetKeyDown(KeyCode.T))
         {

@@ -13,7 +13,10 @@ public class Simulation : MonoBehaviour
     [SerializeField] int _chunkScale = 4;
     [SerializeField] float _activeChunkDistance = 1.5f;
     [SerializeField] bool _drawBounds = false;
+
+    [Header("Colliders")]
     [SerializeField] bool _generateColliders = false;
+    [SerializeField] bool _colliderDebug = false;
     [SerializeField] float _updateColliderFrequency = 0.5f;
     public bool DrawBounds => _drawBounds;
     public float UpdateColliderFrequency => _updateColliderFrequency;
@@ -39,6 +42,8 @@ public class Simulation : MonoBehaviour
 
     [SerializeField] Player _player;
 
+    [SerializeField] Interface _interface;
+    
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;
     int _particleCount = 0;
@@ -50,7 +55,6 @@ public class Simulation : MonoBehaviour
 
     ComputeBuffer _particleTypesBuffer;
     public ComputeBuffer ParticleTypesBuffer => _particleTypesBuffer;
-
     void Start()
     {
         float ratio = 1f / 0.0193f;
@@ -59,6 +63,10 @@ public class Simulation : MonoBehaviour
         InitParticleTypes();
 
         UpdateChunks();
+
+        SetCreatedType(_createdType);
+        SetBrushSize(_brushSize);
+
     }
 
     void InitParticleTypes(){
@@ -136,20 +144,42 @@ public class Simulation : MonoBehaviour
         return ((Vector2)_player.transform.position - position).magnitude < _activeChunkDistance * _worldChunkSize * 2f;
     }
 
-
+    float _scrollSpeed = 1f;
     void Update()
     {
         UpdateChunks();
 
+        if(Input.GetKey(KeyCode.LeftShift)){
+            SetBrushSize(Mathf.RoundToInt(_brushSize + Input.GetAxis("Mouse ScrollWheel") * 5f));
+        }
+        else {
+            Camera.main.orthographicSize -= Input.GetAxis("Mouse ScrollWheel") * _scrollSpeed;
+        }
 
         if(Input.GetKeyDown(KeyCode.Space))
         {
             GetActiveChunk()?.UpdateCollider();
         }
 
+        if(Input.GetKeyDown(KeyCode.F1)) SetCreatedType(0);
+        if(Input.GetKeyDown(KeyCode.F2)) SetCreatedType(1);
+        if(Input.GetKeyDown(KeyCode.F3)) SetCreatedType(2);
+        if(Input.GetKeyDown(KeyCode.F4)) SetCreatedType(3);
+
         
         UpdateColliders();
         
+    }
+
+    void SetCreatedType(int index){
+        if(ParticleTypes.Count <= index) return;
+        _interface.CreatedTypeText.text = ParticleTypes[index].name;
+        _createdType = index;
+    }
+
+    void SetBrushSize(int size){
+        _brushSize = Mathf.Clamp(size, 1, 100);
+        _interface.BrushSizeText.text = _brushSize.ToString();
     }
 
     List<Chunk> _sortedChunks;
@@ -170,6 +200,10 @@ public class Simulation : MonoBehaviour
             if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 100f;
             else chunk.SortValue += chunk.UpdateCollisionValue / 10f;
             float distanceScore = 1f / ((_player.transform.position - chunk.transform.position).magnitude + 1f);
+
+
+            chunk.DebugText.enabled = _colliderDebug;
+            chunk.DebugText.text = chunk.SortValue.ToString();
             chunk.SortValue *= distanceScore * distanceScore;
 
             if(chunk.SortValue < 0.1f) continue;
@@ -179,9 +213,8 @@ public class Simulation : MonoBehaviour
             Color c = Color.red;
             c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) / 100f;
             chunk.TestImage.color = c;
-            chunk.TestImage.enabled = true;
-            chunk.DebugText.enabled = true;
-            chunk.DebugText.text = chunk.SortValue.ToString();
+            chunk.TestImage.enabled = _colliderDebug;
+
         }
 
         if(_sortedChunks.Count == 0){
@@ -197,7 +230,7 @@ public class Simulation : MonoBehaviour
         Color color = Color.green;
         color.a = Mathf.Min(chosen.SortValue / 10.0f, 1) /2f;
         chosen.TestImage.color = color;
-        chosen.TestImage.enabled = true;
+        chosen.TestImage.enabled = _colliderDebug;
 
         chosen.UpdateCollider();
 

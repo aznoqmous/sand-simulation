@@ -132,10 +132,6 @@ bool is_empty(float2 position){
     return get_particle(position).type == 0;
 }
 
-void erase_particle(Particle p){
-    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
-}
-
 float get_noise(float2 input){
     return unity_gradientNoise(input) * 0.5 + unity_gradientNoise(input / 3.5) * 0.5;
 }
@@ -151,8 +147,7 @@ void draw_particle(Particle p){
     // }
     
     float noise = 1.0;
-    if(p.type == 1) // dirt
-    {
+    if(p.type == 1) { // dirt
         if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
         noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
     }
@@ -196,6 +191,10 @@ void wake_neighbors(float2 position){
     wake_particle(position + float2(0, 1));
     wake_particle(position + float2(-1, 0));
     wake_particle(position + float2(1, 0));
+}
+
+void erase_particle(Particle p){
+    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
 }
 
 void move_particle(inout Particle particle, float2 movement){
@@ -293,8 +292,6 @@ void handle_particle_movement(inout Particle p){
 
 bool handle_sand(inout Particle p)
 {
-    ParticleType t = get_type(p);
-
     if(is_empty(p.position + float2(0.0, -1.0))) {
         move_toward(p, float2(0.0, -1.0), Gravity);
         return true;
@@ -359,9 +356,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // Alternate particle direction on each frame
     uint3 current_step = id.xyz;
-    if(Step == 1 ) current_step = uint3(Size - current_step.x, Size - current_step.y, current_step.z);
-    if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
-    if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
+    // if(Step == 1 ) current_step = uint3(Size - current_step.x, Size - current_step.y, current_step.z);
+    // if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
+    // if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
 
     Particle p = Particles[current_step.x * Size + current_step.y];
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
@@ -369,7 +366,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
         Particles[p.position.x * Size + p.position.y].type = MouseType;
         Particles[p.position.x * Size + p.position.y].idle_time = 0;
-        return;
+        wake_neighbors(p.position);
     }
 
     if(Particles[p.position.x * Size + p.position.y].type == 0) {

@@ -6,6 +6,11 @@ public class Interface : MonoBehaviour
     [SerializeField] Simulation _simulation;
     [SerializeField] TextMeshProUGUI _fpsText;
     [SerializeField] TextMeshProUGUI _particlesCountText;
+    [SerializeField] TextMeshProUGUI _createdTypeText;
+    public TextMeshProUGUI CreatedTypeText => _createdTypeText;
+
+    [SerializeField] TextMeshProUGUI _brushSizeText;
+    public TextMeshProUGUI BrushSizeText => _brushSizeText;
 
     [SerializeField] float _fpsTimeout = 0.5f;
     float _lastFpsUpdateTime = 0f;
@@ -17,4 +22,5 @@ public class Interface : MonoBehaviour
         _fpsText.text = Mathf.RoundToInt(1f / Time.deltaTime).ToString();
         _particlesCountText.text = $"{_simulation.ActiveParticleCount}/{_simulation.ParticleCount}";
     }
+
 }
