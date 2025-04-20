@@ -7,6 +7,7 @@ public struct Particle {
     public float speed;
     public int particleType;
     public float idleTime;
+    public int updated;
 }
 
 public struct ParticleType 

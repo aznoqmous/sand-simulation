@@ -7,6 +7,7 @@ struct Particle {
     float speed;
     int type;
     float idle_time;
+    int updated;
 };
 
 struct ParticleType {
@@ -112,6 +113,9 @@ void update_particle(float2 position, Particle p)
     else if(position.x > Size - 1.0) RightChunkParticles[position_to_id(0, position.y)] = p;
     else Particles[position.x * Size + position.y] = p;
 }
+void update_particle(Particle p){
+    update_particle(p.position, p);
+}
 
 
 Particle get_particle(float2 position){
@@ -206,7 +210,7 @@ void move_particle(inout Particle particle, float2 movement){
     wake_particle(targetPosition);
 
     Particle targetParticle = Particles[targetId];
-    erase_particle(particle);
+    // erase_particle(particle);
     if(targetPosition.y < 0.0){
         targetPosition.y = Size - 1.0;
         targetId = position_to_id(targetPosition);
@@ -361,6 +365,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
 
     Particle p = Particles[current_step.x * Size + current_step.y];
+    p.updated = 0;
+    update_particle(p);
+
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
