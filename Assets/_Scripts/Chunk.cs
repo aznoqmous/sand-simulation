@@ -5,12 +5,15 @@ using UnityEngine.Rendering;
 using UnityEngine.UI;
 using System;
 using TMPro;
+using System.IO;
+using NUnit.Framework;
 public class Chunk : MonoBehaviour
 {
-    [SerializeField] private ComputeShader _computeShader;
+    [SerializeField] ComputeShader _computeShader;
+    [SerializeField] ComputeShader _dataShader;
     [SerializeField] RawImage _renderImage;
     [SerializeField] RawImage _colliderImage;
-    [SerializeField] private AdvancedPolygonCollider _collider;
+    [SerializeField] AdvancedPolygonCollider _collider;
 
     RenderTexture _renderTexture;
     RenderTexture _colliderTexture;    
@@ -121,10 +124,12 @@ public class Chunk : MonoBehaviour
         defaultBuffer.Release();
         
         InitParticles();
+        Load();
     }
 
     void InitParticles()
     {
+        bool generateParticles = !HasSaveFile();
         List<Particle> _particles = new List<Particle>();
         for(int x = 0; x < _size; x++){
             for(int y = 0; y < _size; y++){
@@ -132,20 +137,24 @@ public class Chunk : MonoBehaviour
                 p.position = new Vector2(x, y);
                 p.realPosition = new Vector2(x, y);
                 p.idleTime = 0f;
-                // continue; // skip generation
-                float temp = Mathf.PerlinNoise(
-                    (_simulation.Seed + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
-                    (_simulation.Seed + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
-                );
-                float moist = Mathf.PerlinNoise(
-                    (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
-                    (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
-                );
-                if(temp > 0.5f && moist > 0.5f) p.particleType = 3; // water
-                if(temp < 0.2f) p.particleType = 2; // sand
-                else if(temp < 0.4f) {
-                    p.particleType = 1; // earth
+
+                if(generateParticles){
+                    // continue; // skip generation
+                    float temp = Mathf.PerlinNoise(
+                        (_simulation.Seed + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
+                        (_simulation.Seed + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
+                    );
+                    float moist = Mathf.PerlinNoise(
+                        (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
+                        (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
+                    );
+                    if(temp > 0.5f && moist > 0.5f) p.particleType = 3; // water
+                    if(temp < 0.2f) p.particleType = 2; // sand
+                    else if(temp < 0.4f) {
+                        p.particleType = 1; // earth
+                    }
                 }
+                
                 _particles.Add(p);
             }
         }
@@ -165,10 +174,7 @@ public class Chunk : MonoBehaviour
         _computeShader.SetBuffer(_kernel, "Particles", _particlesBuffer);
         _computeShader.SetBuffer(_kernel, "Types", _simulation.ParticleTypesBuffer);
 
-        _computeShader.SetBool("ResetSolidParticleCount", true);
-
         UpdateNeighborBuffer();
-
     }
 
     void Update()
@@ -332,15 +338,6 @@ public class Chunk : MonoBehaviour
     
     }
 
-    Texture2D ToTexture2D(RenderTexture rTex)
-    {
-        Texture2D tex = new Texture2D(64, 64);
-        RenderTexture.active = rTex;
-        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
-        tex.Apply();
-        return tex;
-    }
-
     void OnDestroy()
     {
         Release();
@@ -348,6 +345,7 @@ public class Chunk : MonoBehaviour
     
     void OnDisable()
     {
+        Save();
         // Release();
     }
 
@@ -361,7 +359,70 @@ public class Chunk : MonoBehaviour
             _renderTexture.Release();
         }
         if(_statesBuffer != null) _statesBuffer.Release();
+    }
 
+
+    /**
+    * Save
+    */
+    Texture2D ToTexture2D(RenderTexture rTex)
+    {
+        Texture2D tex = new Texture2D(_size, _size);
+        RenderTexture.active = rTex;
+        tex.ReadPixels(new Rect(0, 0, rTex.width, rTex.height), 0, 0);
+        tex.Apply();
+        return tex;
+    }
+
+    string DirPath => Application.dataPath + "/../" + "/Data/" + _simulation.Seed + "/Chunks";
+    string FileName => Position.x + "_" + Position.y + ".png";
+    Vector2 Position => new Vector2(transform.position.x, transform.position.y) / _simulation.WorldChunkSize;
+    
+    public void Save(){
+        int dataKernel = _dataShader.FindKernel("CSMain");
+        _dataShader.SetBuffer(dataKernel, "Particles", _particlesBuffer);
+        _dataShader.SetBuffer(dataKernel, "Types", _simulation.ParticleTypesBuffer);
+        _dataShader.SetTexture(dataKernel, "Result", _renderTexture);
+        _dataShader.SetBool("IsSave", true);
+        _dataShader.SetBool("IsLoad", false);
+        _dataShader.SetInt("Size", _size);
+        _dataShader.Dispatch(_kernel, _dispatchCount.x, _dispatchCount.y, 1);
+        
+        byte[] bytes = ToTexture2D(_renderTexture).EncodeToPNG();
+        if(!Directory.Exists(DirPath)) {
+            Directory.CreateDirectory(DirPath);
+        }
+        File.WriteAllBytes(DirPath + "/" + FileName, bytes);
+    }
+
+    public bool HasSaveFile(){
+        if(!Directory.Exists(DirPath)) return false;
+        if(!File.Exists(DirPath + "/" + FileName)) return false;
+        return true;
+    }
+
+    public void Load()
+    {
+
+        if(!HasSaveFile()) return;
+        SetActiveState(false);
+
+        byte[] bytes = File.ReadAllBytes(DirPath + "/" + FileName);
+        Texture2D tex = new Texture2D(_size, _size);
+        tex.LoadImage(bytes);
+        tex.Apply();
+        Graphics.Blit(tex, _renderTexture);
+
+        int dataKernel = _dataShader.FindKernel("CSMain");
+        _dataShader.SetBuffer(dataKernel, "Particles", _particlesBuffer);
+        _dataShader.SetBuffer(dataKernel, "Types", _simulation.ParticleTypesBuffer);
+        _dataShader.SetTexture(dataKernel, "Result", _renderTexture);
+        _dataShader.SetBool("IsSave", false);
+        _dataShader.SetBool("IsLoad", true);
+        _dataShader.SetInt("Size", _size);
+        _dataShader.Dispatch(_kernel, _dispatchCount.x, _dispatchCount.y, 1);
+        
+        SetActiveState();
     }
 }
 

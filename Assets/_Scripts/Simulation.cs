@@ -156,9 +156,15 @@ public class Simulation : MonoBehaviour
             Camera.main.orthographicSize -= Input.GetAxis("Mouse ScrollWheel") * _scrollSpeed;
         }
 
-        if(Input.GetKeyDown(KeyCode.Space))
+        if(Input.GetKeyDown(KeyCode.B))
         {
-            GetActiveChunk()?.UpdateCollider();
+            // GetActiveChunk()?.UpdateCollider();
+            GetActiveChunk()?.Save();
+        }
+        if(Input.GetKeyDown(KeyCode.N))
+        {
+            // GetActiveChunk()?.UpdateCollider();
+            GetActiveChunk()?.Load();
         }
 
         if(Input.GetKeyDown(KeyCode.F1)) SetCreatedType(0);

@@ -38,7 +38,7 @@ int Step;
 RWTexture2D<float4> Result;
 RWTexture2D<float4> ColliderTexture;
 
-globallycoherent RWStructuredBuffer<Particle> Particles;
+RWStructuredBuffer<Particle> Particles;
 RWStructuredBuffer<int> States;
 
 RWStructuredBuffer<Particle> LeftChunkParticles;

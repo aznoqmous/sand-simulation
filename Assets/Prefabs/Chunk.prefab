@@ -229,6 +229,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _computeShader: {fileID: 7200000, guid: 8e2f5104962421347bff5a7a1be8eba0, type: 3}
+  _dataShader: {fileID: 7200000, guid: 936f625cc8ddfad4eaf9011ab313e692, type: 3}
   _renderImage: {fileID: 3714341598733332125}
   _colliderImage: {fileID: 2798450226932413960}
   _collider: {fileID: 8181181733187003130}

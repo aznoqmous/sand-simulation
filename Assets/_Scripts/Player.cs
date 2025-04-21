@@ -27,7 +27,8 @@ public class Player : MonoBehaviour
             _rigidbody2D.AddForce(Vector2.up * _jumpSpeed, ForceMode2D.Impulse);
         }
 
-        _sprite.transform.localScale = new Vector3(Input.GetAxis("Horizontal") < 0 ? -1 : 1, 1, 1);
+        if(Input.GetAxis("Horizontal") < 0)  _sprite.transform.localScale = new Vector3(-1, 1, 1);
+        if(Input.GetAxis("Horizontal") > 0)  _sprite.transform.localScale = new Vector3(1, 1, 1);
     }
     
     void FixedUpdate()

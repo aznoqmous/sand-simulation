@@ -1,0 +1,131 @@
+#pragma kernel CSMain
+
+struct Particle {
+    float2 position;
+    float2 real_position;
+    float2 direction;
+    float speed;
+    int type;
+    float idle_time;
+    int updated;
+};
+
+struct ParticleType {
+    float4 color;
+    int movement_type;
+    float dispersion;
+    int is_solid;
+};
+
+float2 DIR_UP = float2(0.0, 1.0);
+float2 DIR_DOWN = float2(0.0, -1.0);
+float2 DIR_LEFT = float2(-1.0, 0.0);
+float2 DIR_RIGHT = float2(1.0, 0.0);
+
+float Size;
+float Time;
+float DeltaTime;
+float Gravity;
+bool MouseDown;
+bool DrawBounds;
+int MouseType;
+int BrushSize;
+float2 ChunkPosition;
+float2 MousePosition;
+float IdleTime;
+int Step;
+
+bool IsSave;
+bool IsLoad;
+
+RWTexture2D<float4> Result;
+RWTexture2D<float4> ColliderTexture;
+
+RWStructuredBuffer<Particle> Particles;
+RWStructuredBuffer<int> States;
+
+RWStructuredBuffer<Particle> LeftChunkParticles;
+RWStructuredBuffer<Particle> TopChunkParticles;
+RWStructuredBuffer<Particle> BottomChunkParticles;
+RWStructuredBuffer<Particle> RightChunkParticles;
+
+StructuredBuffer<ParticleType> Types;
+
+float2 unity_gradientNoise_dir(float2 p)
+{
+    p = p % 289;
+    float x = (34 * p.x + 1) * p.x % 289 + p.y;
+    x = (34 * x + 1) * x % 289;
+    x = frac(x / 41) * 2 - 1;
+    return normalize(float2(x - floor(x + 0.5), abs(x) - 0.5));
+}
+
+float unity_gradientNoise(float2 p)
+{
+    float2 ip = floor(p);
+    float2 fp = frac(p);
+    float d00 = dot(unity_gradientNoise_dir(ip), fp);
+    float d01 = dot(unity_gradientNoise_dir(ip + float2(0, 1)), fp - float2(0, 1));
+    float d10 = dot(unity_gradientNoise_dir(ip + float2(1, 0)), fp - float2(1, 0));
+    float d11 = dot(unity_gradientNoise_dir(ip + float2(1, 1)), fp - float2(1, 1));
+    fp = fp * fp * fp * (fp * (fp * 6 - 15) + 10);
+    return lerp(lerp(d00, d01, fp.y), lerp(d10, d11, fp.y), fp.x);
+}
+
+float get_noise(float2 input){
+    return unity_gradientNoise(input) * 0.5 + unity_gradientNoise(input / 3.5) * 0.5;
+}
+
+void draw_particle(Particle p){
+    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    if(p.type == 0) return;
+    
+    float4 color = Types[p.type].color;
+    
+    float noise = 1.0;
+    if(p.type == 1) { // dirt
+        // if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
+        noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
+    }
+    else if(p.type == 3) { // water
+        noise = get_noise((ChunkPosition * Size + p.position) / 2.0 + float2(Time, Time));
+        color.w = 0.5;
+    }
+    else {
+        noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
+    }
+    Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
+
+    //Result[p.position] = float4(p.speed, abs(p.direction.x), abs(p.direction.y), 1.0);
+}
+
+int color_to_type(float4 input_color){
+    for (int i = 0; i < 5; i++){
+        if (
+            distance(Types[i].color, input_color) < 0.5
+        ) return i;
+    }
+    return 0;
+}
+float4 type_to_color(int type){
+    return Types[type].color;
+}
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    uint3 current_step = id.xyz;
+    if(IsSave == 1){
+        Particle p = Particles[id.x * Size + id.y];
+        Result[id.xy] = type_to_color(p.type);
+    }
+    if(IsLoad == 1){
+        if(Result[id.xy].w == 0) return; 
+        Particles[id.x * Size + id.y].type = color_to_type(Result[id.xy]);
+        Particles[id.x * Size + id.y].idle_time = 0.0;
+        Particles[id.x * Size + id.y].position = id.xy;
+        Particles[id.x * Size + id.y].real_position = id.xy;
+        Particle p = Particles[id.x * Size + id.y];
+    }
+}
+

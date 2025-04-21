@@ -1119,6 +1119,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02376bc1031bd4944b6c5a9fef9b2dff, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _cameraSpeed: 10
   _moveSpeed: 20
   _jumpSpeed: 3
   _rigidbody2D: {fileID: 1318452711}
@@ -1525,10 +1526,10 @@ MonoBehaviour:
   _drawBounds: 0
   _generateColliders: 1
   _colliderDebug: 0
-  _updateColliderFrequency: 0
-  _gravity: 98.1
+  _updateColliderFrequency: 0.5
+  _gravity: 98
   _idleTime: 1
-  _seed: 123456
+  _seed: 1337
   _brushSize: 10
   _createdType: 0
   _particleTypes:
