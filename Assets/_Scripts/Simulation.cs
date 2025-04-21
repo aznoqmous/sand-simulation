@@ -13,7 +13,9 @@ public class Simulation : MonoBehaviour
     [SerializeField] int _chunkScale = 4;
     [SerializeField] float _activeChunkDistance = 1.5f;
     [SerializeField] bool _drawBounds = false;
-
+    [SerializeField] bool _useStorage = false; 
+    public bool UseStorage => _useStorage;
+    
     [Header("Colliders")]
     [SerializeField] bool _generateColliders = false;
     [SerializeField] bool _colliderDebug = false;

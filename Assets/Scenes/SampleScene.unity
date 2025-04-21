@@ -1171,9 +1171,9 @@ PolygonCollider2D:
   m_Points:
     m_Paths:
     - - {x: -0.009743164, y: 0.07062598}
-      - {x: -0.010369144, y: -0.049149394}
-      - {x: -0.029743165, y: -0.079173334}
-      - {x: 0.020056153, y: -0.079743154}
+      - {x: -0.010677959, y: -0.04884058}
+      - {x: 0.0039177323, y: -0.08071742}
+      - {x: 0.02036497, y: -0.048552766}
       - {x: 0.02005616, y: 0.06948633}
   m_UseDelaunayMesh: 0
 --- !u!50 &1318452711
@@ -1529,7 +1529,7 @@ MonoBehaviour:
   _updateColliderFrequency: 0.5
   _gravity: 98
   _idleTime: 1
-  _seed: 1337
+  _seed: 123456
   _brushSize: 10
   _createdType: 0
   _particleTypes:

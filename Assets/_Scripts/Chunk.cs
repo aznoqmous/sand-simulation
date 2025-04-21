@@ -129,7 +129,7 @@ public class Chunk : MonoBehaviour
 
     void InitParticles()
     {
-        bool generateParticles = !HasSaveFile();
+        bool generateParticles = !(_simulation.UseStorage && HasSaveFile());
         List<Particle> _particles = new List<Particle>();
         for(int x = 0; x < _size; x++){
             for(int y = 0; y < _size; y++){
@@ -184,8 +184,13 @@ public class Chunk : MonoBehaviour
         float ratio = 1f / 0.0193f;
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePosition = ((mousePosition - (Vector2)transform.position) / _scale / (_size / ratio / 2f) + Vector2.one) * _size / 2f;
+        float mouseSize = _simulation.BrushSize / _size * _simulation.WorldChunkSize;
 
-        if(!_isActiveState && Input.GetMouseButton(0) && mousePosition.x > 0 && mousePosition.x < _size && mousePosition.y > 0 && mousePosition.y < _size)
+        if(!_isActiveState && Input.GetMouseButton(0)
+        && mousePosition.x + mouseSize > 0
+        && mousePosition.x - mouseSize < _size
+        && mousePosition.y + mouseSize > 0
+        && mousePosition.y - mouseSize < _size)
         {
             SetActiveState();
         }
@@ -345,7 +350,7 @@ public class Chunk : MonoBehaviour
     
     void OnDisable()
     {
-        Save();
+        if(_simulation.UseStorage) Save();
         // Release();
     }
 
