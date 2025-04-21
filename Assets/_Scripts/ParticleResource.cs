@@ -8,9 +8,33 @@ public class ParticleResource : ScriptableObject {
     public MovementType movementType;
     public float dispersion;
     public bool isSolid;
+
+    [Header("Effects")]
+    public bool isFlammable;
+    public bool isAbrasive;
+    public bool burns;
+    public bool corrosive;
+
+    [Header("LifeTime")]
+    public float lifeTime;
+    public ParticleTypeEnum onDeathEmit;
+    public float onDeathSpawnChance;
 }
+
 public enum MovementType {
     Idle,
     Sand,
-    Water
+    Water,
+    Gas,
+    Fire
+}
+public enum ParticleTypeEnum {
+    Empty,
+    Stone,
+    Sand,
+    Water,
+    Wood,
+    Fire,
+    Gas,
+    Acid,
 }

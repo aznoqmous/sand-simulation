@@ -10,9 +10,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d8168a0c9732804ebd276c9978a32b7, type: 3}
-  m_Name: Gravel
+  m_Name: Wood
   m_EditorClassIdentifier: 
-  color: {r: 0.66666657, g: 0.66666657, b: 0.66666657, a: 1}
-  movementType: 1
-  dispersion: 10
-  density: 10
+  color: {r: 0.22012573, g: 0.15065458, b: 0.08652739, a: 1}
+  movementType: 0
+  dispersion: 0
+  isSolid: 1
+  isFlammable: 1
+  isAbrasive: 1
+  burns: 0
+  corrosive: 0
+  lifeTime: 0
+  onDeathEmit: 0
+  onDeathSpawnChance: 0

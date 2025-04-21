@@ -1,3 +1,8 @@
+const float2 DIR_UP = float2(0.0, 1.0);
+const float2 DIR_DOWN = float2(0.0, -1.0);
+const float2 DIR_LEFT = float2(-1.0, 0.0);
+const float2 DIR_RIGHT = float2(1.0, 0.0);
+
 struct Particle {
     float2 position;
     float2 real_position;
@@ -5,6 +10,7 @@ struct Particle {
     float speed;
     int type;
     float idle_time;
+    float birth;
 };
 
 struct ParticleType {
@@ -12,10 +18,11 @@ struct ParticleType {
     int movement_type;
     float dispersion;
     int is_solid;
+    int is_flammable;
+    int is_abrasive;
+    int burns;
+    int corrosive;
+    float life_time;
+    int on_death_emit;
+    float on_death_spawn_chance;
 };
-
-const float2 DIR_UP = float2(0.0, 1.0);
-const float2 DIR_DOWN = float2(0.0, -1.0);
-const float2 DIR_LEFT = float2(-1.0, 0.0);
-const float2 DIR_RIGHT = float2(1.0, 0.0);
-

@@ -1524,7 +1524,8 @@ MonoBehaviour:
   _chunkScale: 2
   _activeChunkDistance: 2
   _drawBounds: 0
-  _generateColliders: 1
+  _useStorage: 1
+  _generateColliders: 0
   _colliderDebug: 0
   _updateColliderFrequency: 0.5
   _gravity: 98
@@ -1537,6 +1538,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c4f8326b81ee7b847b5a62bfe8de6200, type: 2}
   - {fileID: 11400000, guid: 251ec4de5c9f53943bf189259a9c4f87, type: 2}
   - {fileID: 11400000, guid: d1fd39be76d1ecf49bcdae27aacddb63, type: 2}
+  - {fileID: 11400000, guid: 834e0e13409031c428991cca889e4fb9, type: 2}
+  - {fileID: 11400000, guid: 7be6b910f6f8f754d9529a6b64f4ce00, type: 2}
+  - {fileID: 11400000, guid: 3168ae25bc651664aa96377610232be7, type: 2}
+  - {fileID: 11400000, guid: 0eac08969d4ee0d4c8201921568864fa, type: 2}
   _player: {fileID: 1318452708}
   _interface: {fileID: 1059605882}
 --- !u!1 &1978285711

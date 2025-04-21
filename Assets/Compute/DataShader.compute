@@ -1,5 +1,12 @@
 #pragma kernel CSMain
 
+// #include "Assets/Compute/ParticleTypes.compute"
+
+const float2 DIR_UP = float2(0.0, 1.0);
+const float2 DIR_DOWN = float2(0.0, -1.0);
+const float2 DIR_LEFT = float2(-1.0, 0.0);
+const float2 DIR_RIGHT = float2(1.0, 0.0);
+
 struct Particle {
     float2 position;
     float2 real_position;
@@ -7,7 +14,7 @@ struct Particle {
     float speed;
     int type;
     float idle_time;
-    int updated;
+    float birth;
 };
 
 struct ParticleType {
@@ -15,12 +22,14 @@ struct ParticleType {
     int movement_type;
     float dispersion;
     int is_solid;
+    int is_flammable;
+    int is_abrasive;
+    int burns;
+    int corrosive;
+    float life_time;
+    int on_death_emit;
+    float on_death_spawn_chance;
 };
-
-float2 DIR_UP = float2(0.0, 1.0);
-float2 DIR_DOWN = float2(0.0, -1.0);
-float2 DIR_LEFT = float2(-1.0, 0.0);
-float2 DIR_RIGHT = float2(1.0, 0.0);
 
 float Size;
 float Time;
@@ -100,15 +109,10 @@ void draw_particle(Particle p){
 }
 
 int color_to_type(float4 input_color){
-    for (int i = 0; i < 5; i++){
-        if (
-            distance(Types[i].color, input_color) < 0.5
-        ) return i;
-    }
-    return 0;
+    return input_color.w * 64;
 }
 float4 type_to_color(int type){
-    return Types[type].color;
+    return float4(1.0, 1.0, 1.0, type / 64.0);
 }
 
 [numthreads(8,8,1)]

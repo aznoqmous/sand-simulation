@@ -7,7 +7,7 @@ public struct Particle {
     public float speed;
     public int particleType;
     public float idleTime;
-    public int updated;
+    public float birth;
 }
 
 public struct ParticleType 
@@ -16,4 +16,13 @@ public struct ParticleType
     public int movementType;
     public float dispersion;
     public int isSolid;
+    
+    public int isFlammable;
+    public int isAbrasive;
+    public int burns;
+    public int corrosive;
+
+    public float lifeTime;
+    public int onDeathEmit;
+    public float onDeathSpawnChance;
 }

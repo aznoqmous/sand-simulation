@@ -149,10 +149,8 @@ public class Chunk : MonoBehaviour
                         (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                     );
                     if(temp > 0.5f && moist > 0.5f) p.particleType = 3; // water
-                    if(temp < 0.2f) p.particleType = 2; // sand
-                    else if(temp < 0.4f) {
-                        p.particleType = 1; // earth
-                    }
+                    else if(temp < 0.2f) p.particleType = 2; // sand
+                    else if(temp < 0.45f) p.particleType = 1; // earth
                 }
                 
                 _particles.Add(p);
@@ -166,7 +164,7 @@ public class Chunk : MonoBehaviour
             + sizeof(float) // speed
             + sizeof(int) // type
             + sizeof(float) // idle time
-            + sizeof(int) // updated
+            + sizeof(float) // birth
         ;
         _particlesBuffer = new ComputeBuffer(Mathf.FloorToInt(Mathf.Pow(_size, 2f)), particleSize, ComputeBufferType.Structured, ComputeBufferMode.Immutable);
         

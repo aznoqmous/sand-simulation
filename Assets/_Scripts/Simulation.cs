@@ -77,6 +77,13 @@ public class Simulation : MonoBehaviour
                 + sizeof(int) // movement type
                 + sizeof(float) // dispersion
                 + sizeof(int) // is solid
+                + sizeof(int) // is flammable
+                + sizeof(int) // is abrasive
+                + sizeof(int) // burns
+                + sizeof(int) // corrosive
+                + sizeof(float) // lifeTime
+                + sizeof(int) // onDeathEmit
+                + sizeof(float) // onDeathSpawnChance
             ;
             List<ParticleType> particleTypes = new List<ParticleType>();
             foreach(ParticleResource particleType in ParticleTypes)
@@ -86,6 +93,13 @@ public class Simulation : MonoBehaviour
                 p.movementType = (int)particleType.movementType;
                 p.dispersion = particleType.dispersion;
                 p.isSolid = particleType.isSolid ? 1 : 0;
+                p.isFlammable = particleType.isFlammable ? 1 : 0;
+                p.isAbrasive = particleType.isAbrasive ? 1 : 0;
+                p.burns = particleType.burns ? 1 : 0;
+                p.corrosive = particleType.corrosive ? 1 : 0;
+                p.lifeTime = particleType.lifeTime;
+                p.onDeathEmit = (int) particleType.onDeathEmit;
+                p.onDeathSpawnChance = particleType.onDeathSpawnChance;
                 particleTypes.Add(p);
             }
             _particleTypesBuffer = new ComputeBuffer(ParticleTypes.Count, particleTypeSize);
@@ -173,6 +187,10 @@ public class Simulation : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.F2)) SetCreatedType(1);
         if(Input.GetKeyDown(KeyCode.F3)) SetCreatedType(2);
         if(Input.GetKeyDown(KeyCode.F4)) SetCreatedType(3);
+        if(Input.GetKeyDown(KeyCode.F5)) SetCreatedType(4);
+        if(Input.GetKeyDown(KeyCode.F6)) SetCreatedType(5);
+        if(Input.GetKeyDown(KeyCode.F7)) SetCreatedType(6);
+        if(Input.GetKeyDown(KeyCode.F8)) SetCreatedType(7);
 
         
         UpdateColliders();
