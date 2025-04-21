@@ -38,7 +38,7 @@ int Step;
 RWTexture2D<float4> Result;
 RWTexture2D<float4> ColliderTexture;
 
-RWStructuredBuffer<Particle> Particles;
+globallycoherent RWStructuredBuffer<Particle> Particles;
 RWStructuredBuffer<int> States;
 
 RWStructuredBuffer<Particle> LeftChunkParticles;
@@ -145,14 +145,10 @@ void draw_particle(Particle p){
     if(p.type == 0) return;
     
     float4 color = Types[p.type].color;
-    // if(is_idle(p)){
-    //     Result[p.position] = float4(color.xyz, 0.5);
-    //     return;
-    // }
     
     float noise = 1.0;
     if(p.type == 1) { // dirt
-        if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
+        // if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
         noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
     }
     else if(p.type == 3) { // water
@@ -208,9 +204,9 @@ void move_particle(inout Particle particle, float2 movement){
     int currentId = particle.position.x * Size + particle.position.y;
 
     wake_particle(targetPosition);
-
+    
     Particle targetParticle = Particles[targetId];
-    // erase_particle(particle);
+    
     if(targetPosition.y < 0.0){
         targetPosition.y = Size - 1.0;
         targetId = position_to_id(targetPosition);
@@ -247,7 +243,6 @@ void move_particle(inout Particle particle, float2 movement){
         particle.position = targetPosition;
         particle.real_position = particle.position;
         Particles[targetId] = particle;
-        draw_particle(particle);
     }
 
     targetParticle.position = originalPosition;
@@ -256,13 +251,11 @@ void move_particle(inout Particle particle, float2 movement){
 
 }
 
-
-
 void move_toward(inout Particle p, float2 direction, float speed=5.0){
     p.direction += direction * DeltaTime * speed;
     p.direction = normalize(p.direction);
     p.speed += speed * DeltaTime;
-    Particles[position_to_id(p.position)] = p;
+    update_particle(p);
 }
 
 void handle_particle_movement(inout Particle p){
@@ -285,8 +278,9 @@ void handle_particle_movement(inout Particle p){
     
     if(!is_empty(p.position + mov)){
         p.real_position = p.position;
-        p.direction = float2(0.0, 0.0);
-        p.speed = 0.0;
+        p.direction *= float2(1 - abs(mov.x), 1 - abs(mov.y));
+        // p.direction = float2(0.0, 0.0);
+        p.speed *= 1.0 - 1.0 / (get_type(p).dispersion + 1.0);
         update_particle(p.position, p);
         return;
     }
@@ -301,15 +295,14 @@ bool handle_sand(inout Particle p)
         return true;
     }
     else {
-        float sandDispersion = get_type(p).dispersion;
         if (is_empty(p.position + float2(1, 0)) && is_empty(p.position + float2(1, -1)))
         {
-            move_toward(p, float2(1.0, 0.0), sandDispersion);
+            move_toward(p, float2(1.0, 0.0), Gravity);
             return true;
         }
         else if (is_empty(p.position + float2(-1, 0)) && is_empty(p.position + float2(-1, -1)))
         {
-            move_toward(p, float2(-1.0, 0.0), sandDispersion);
+            move_toward(p, float2(-1.0, 0.0), Gravity);
             return true;
         }
     }
@@ -320,20 +313,19 @@ bool handle_sand(inout Particle p)
 bool handle_water(inout Particle p){
 
     if(!handle_sand(p)){
-        float waterDispersion = get_type(p).dispersion;
         if (int(rand(p.position) * 100000.0) % 2 == 0 && is_empty(p.position + float2(1, 0)))
         {
-            move_toward(p, float2(1.0, 0.0), waterDispersion);
+            move_toward(p, float2(1.0, 0.0), Gravity);
             return true;
         }
         else if (is_empty(p.position + float2(-1, 0)))
         {
-            move_toward(p, float2(-1.0, 0.0), waterDispersion);
+            move_toward(p, float2(-1.0, 0.0), Gravity);
             return true;
         }
         else if (is_empty(p.position + float2(1, 0)))
         {
-            move_toward(p, float2(1.0, 0.0), waterDispersion);
+            move_toward(p, float2(1.0, 0.0), Gravity);
             return true;
         }
     }
@@ -341,28 +333,17 @@ bool handle_water(inout Particle p){
     return false;
 }
 
-void InitChunkStates(){
-    States[0] = 0; // particles - self
-    States[1] = 0; // particles - left
-    States[2] = 0; // particles - top
-    States[3] = 0; // particles - right
-    States[4] = 0; // particles - bottom
-
-    States[5] = 0; // collision - self
-    // States[6] = 0; // collision - left
-    // States[7] = 0; // collision - top
-    // States[8] = 0; // collision - right
-    // States[9] = 0; // collision - bottom
-}
-
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // Alternate particle direction on each frame
     uint3 current_step = id.xyz;
-    // if(Step == 1 ) current_step = uint3(Size - current_step.x, Size - current_step.y, current_step.z);
-    // if(Step == 2 ) current_step = uint3(current_step.x, Size - current_step.y, current_step.z);
-    // if(Step == 3 ) current_step = uint3(Size - current_step.x, current_step.y, current_step.z);
+ 
+    // avoid multithread overlaps / update ~ 4 times slower
+    // if(Step == 0 && !(current_step.x % 2 == 0 && current_step.y % 2 == 0)) return;
+    // if(Step == 1 && !(current_step.x % 2 == 1 && current_step.y % 2 == 0)) return;
+    // if(Step == 2 && !(current_step.x % 2 == 0 && current_step.y % 2 == 1)) return;
+    // if(Step == 3 && !(current_step.x % 2 == 1 && current_step.y % 2 == 1)) return;
 
     Particle p = Particles[current_step.x * Size + current_step.y];
     p.updated = 0;
@@ -371,12 +352,15 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
     
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
-        Particles[p.position.x * Size + p.position.y].type = MouseType;
-        Particles[p.position.x * Size + p.position.y].idle_time = 0;
+        p.type = MouseType;
+        p.idle_time = 0;
+        update_particle(p);
         wake_neighbors(p.position);
     }
+    
 
-    if(Particles[p.position.x * Size + p.position.y].type == 0) {
+
+    if(p.type == 0) {
         erase_particle(p);
 
         /**
