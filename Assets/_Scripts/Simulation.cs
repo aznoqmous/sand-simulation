@@ -79,6 +79,7 @@ public class Simulation : MonoBehaviour
                 + sizeof(int) // is solid
                 + sizeof(int) // is flammable
                 + sizeof(int) // is abrasive
+                + sizeof(int) // share wetness
                 + sizeof(int) // is wet
                 + sizeof(int) // burns
                 + sizeof(int) // corrosive
@@ -96,6 +97,7 @@ public class Simulation : MonoBehaviour
                 p.isSolid = particleType.isSolid ? 1 : 0;
                 p.isFlammable = particleType.isFlammable ? 1 : 0;
                 p.isAbrasive = particleType.isAbrasive ? 1 : 0;
+                p.shareWetness = particleType.shareWetness ? 1 : 0;
                 p.isWet = particleType.isWet ? 1 : 0;
                 p.burns = particleType.burns ? 1 : 0;
                 p.corrosive = particleType.corrosive ? 1 : 0;
@@ -192,6 +194,7 @@ public class Simulation : MonoBehaviour
         if(Input.GetKeyDown(KeyCode.F6)) SetCreatedType(5);
         if(Input.GetKeyDown(KeyCode.F7)) SetCreatedType(6);
         if(Input.GetKeyDown(KeyCode.F8)) SetCreatedType(7);
+        if(Input.GetKeyDown(KeyCode.F9)) SetCreatedType(8);
 
         
         UpdateColliders();

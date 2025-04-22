@@ -1524,13 +1524,13 @@ MonoBehaviour:
   _chunkScale: 2
   _activeChunkDistance: 2
   _drawBounds: 0
-  _useStorage: 1
+  _useStorage: 0
   _generateColliders: 0
   _colliderDebug: 0
   _updateColliderFrequency: 0.5
   _gravity: 98
   _idleTime: 1
-  _seed: 123456
+  _seed: 123
   _brushSize: 10
   _createdType: 0
   _particleTypes:
@@ -1542,6 +1542,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7be6b910f6f8f754d9529a6b64f4ce00, type: 2}
   - {fileID: 11400000, guid: 3168ae25bc651664aa96377610232be7, type: 2}
   - {fileID: 11400000, guid: 0eac08969d4ee0d4c8201921568864fa, type: 2}
+  - {fileID: 11400000, guid: 38903da9eb6962944a295568f7a11c44, type: 2}
+  - {fileID: 11400000, guid: 0ebd2cba29dd648408bb88b2b3bc6b7d, type: 2}
+  - {fileID: 11400000, guid: a788aa23f875dac418e6fe69da1e5355, type: 2}
   _player: {fileID: 1318452708}
   _interface: {fileID: 1059605882}
 --- !u!1 &1978285711

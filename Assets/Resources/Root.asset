@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d8168a0c9732804ebd276c9978a32b7, type: 3}
-  m_Name: Wood
+  m_Name: Root
   m_EditorClassIdentifier: 
-  color: {r: 0.25157225, g: 0.19217946, b: 0.1147106, a: 1}
-  movementType: 5
+  color: {r: 0.47798735, g: 0.3630541, b: 0.18187562, a: 1}
+  movementType: 6
   dispersion: 0
   isSolid: 1
   isFlammable: 1

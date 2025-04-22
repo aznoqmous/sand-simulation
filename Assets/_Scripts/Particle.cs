@@ -11,20 +11,4 @@ public struct Particle {
     public float wetness;
 }
 
-public struct ParticleType 
-{
-    public Color color;
-    public int movementType;
-    public float dispersion;
-    public int isSolid;
-    
-    public int isFlammable;
-    public int isAbrasive;
-    public int isWet;
-    public int burns;
-    public int corrosive;
 
-    public float lifeTime;
-    public int onDeathEmit;
-    public float onDeathSpawnChance;
-}

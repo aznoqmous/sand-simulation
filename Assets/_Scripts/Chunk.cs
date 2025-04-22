@@ -140,7 +140,7 @@ public class Chunk : MonoBehaviour
 
                 if(generateParticles){
                     // continue; // skip generation
-                    float temp = Mathf.PerlinNoise(
+                    float density = Mathf.PerlinNoise(
                         (_simulation.Seed + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                         (_simulation.Seed + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                     );
@@ -148,9 +148,12 @@ public class Chunk : MonoBehaviour
                         (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                         (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                     );
-                    if(temp > 0.5f && moist > 0.5f) p.particleType = 3; // water
-                    else if(temp < 0.2f) p.particleType = 2; // sand
-                    else if(temp < 0.45f) p.particleType = 1; // earth
+                    if(density < 0.2f && moist > 0.5f) p.particleType = 3; // water
+                    else if(density > 0.8) p.particleType = 1; // stone
+                    else if(density > 0.5) {
+                        if(moist < 0.2f) p.particleType = 2; // sand
+                        else p.particleType = 8; // earth
+                    }
                 }
                 
                 _particles.Add(p);

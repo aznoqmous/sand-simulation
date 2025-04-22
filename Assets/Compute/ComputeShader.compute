@@ -1,6 +1,5 @@
 #pragma kernel CSMain
-
-// #include "Assets/Compute/ParticleTypes.compute"
+#pragma use_dxc 
 
 const float2 DIR_UP = float2(0.0, 1.0);
 const float2 DIR_DOWN = float2(0.0, -1.0);
@@ -25,6 +24,7 @@ struct ParticleType {
     int is_solid;
     int is_flammable;
     int is_abrasive;
+    int share_wetness;
     int is_wet;
     int burns;
     int corrosive;
@@ -98,7 +98,7 @@ float2 get_movement(float2 mov){
 
 float fract(float x)
 {
-    return x / floor(x);
+    return x - floor(x);
 }
 
 float rand(float2 c){
@@ -163,6 +163,11 @@ void draw_particle(Particle p){
     
     float4 color = Types[p.type].color;
     
+    // if(is_idle(p)){
+    //     Result[p.position] = color;
+    //     return;
+    // }
+    
     float noise = 1.0;
     if(p.type == 1) { // stone
         // if(is_empty(p.position + float2(0.0, 2.0))) color = float4(0.0, 1.0, 0.2, 1.0);
@@ -179,7 +184,7 @@ void draw_particle(Particle p){
         noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
     }
     Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
-    if(!get_type(p).is_wet) Result[p.position] *= 1.0 - p.wetness / 3.0;
+    if(!get_type(p).is_wet) Result[p.position] *= 1.0 - p.wetness / 2.0;
 }
 
 
@@ -194,7 +199,7 @@ void wake_particle_chunk(float2 position){
 
 void wake_particle(float2 position){
     Particle p = get_particle(position);
-    if(p.type == 0 || get_type(p).movement_type == 0) return;
+    if(p.type == 0 || (get_type(p).movement_type == 0 && p.wetness == 0)) return;
     p.idle_time = 0;
     wake_particle_chunk(position);
     update_particle(position, p);
@@ -426,16 +431,34 @@ bool handle_fire(inout Particle p){
     return false;
 }
 
-void soak(float2 position){
+void soak(float2 position, float value, Particle particle){
     Particle p = get_particle(position);
-    p.wetness = lerp(p.wetness, 1.0, DeltaTime);
+    if(value < p.wetness) return;
+    p.wetness = lerp(p.wetness, value, DeltaTime);
     update_particle(position, p);
+    wake_particle(particle.position);
+    wake_neighbors(particle.position);
 }
-void soak_neighbors(inout Particle p){
-    if(!is_empty(p.position + float2(1.0, 0.0))) soak(p.position + float2(1.0, 0.0));
-    if(!is_empty(p.position + float2(-1.0, 0.0))) soak(p.position + float2(-1.0, 0.0));
-    if(!is_empty(p.position + float2(0.0, 2.0))) soak(p.position + float2(0.0, 2.0));
-    if(!is_empty(p.position + float2(0.0, -1.0))) soak(p.position + float2(0.0, -1.0));
+
+void soak_neighbors(inout Particle p, float value){
+    if(get_type(p.position + float2(1.0, 0.0)).share_wetness == 1) soak(p.position + float2(1.0, 0.0), value, p);
+    if(get_type(p.position + float2(-1.0, 0.0)).share_wetness == 1) soak(p.position + float2(-1.0, 0.0), value, p);
+    if(get_type(p.position + float2(0.0, 2.0)).share_wetness == 1) soak(p.position + float2(0.0, 2.0), value, p);
+    if(get_type(p.position + float2(0.0, -1.0)).share_wetness == 1) soak(p.position + float2(0.0, -1.0), value, p);
+}
+
+void grow_root(float2 position, Particle p){
+    Particle b = get_particle(position);
+    if(b.type != 8 || b.wetness < 0.1) return;
+    if(rand(position) > b.wetness * DeltaTime * get_noise(position / 5.0)) return;
+    b.type = 9;
+    update_particle(b);
+}
+void handle_wood(Particle p){
+    grow_root(p.position + float2(1.0, 0.0), p);
+    grow_root(p.position + float2(-1.0, 0.0), p);
+    grow_root(p.position + float2(0.0, 2.0), p);
+    grow_root(p.position + float2(0.0, -1.0), p);
 }
 
 [numthreads(8,8,1)]
@@ -459,9 +482,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         p.type = MouseType;
         p.idle_time = 0;
         p.birth = Time;
+        p.wetness = 0;
         update_particle(p);
         wake_neighbors(p.position);
     }
+    
 
     if(p.type == 0) {
         erase_particle(p);
@@ -485,6 +510,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         return;
     }
 
+    if(p.wetness > 0){
+        p.wetness = lerp(p.wetness, 0, DeltaTime / 10.0);
+        update_particle(p);
+    }
+
     draw_particle(p);
     increment_particles_count();
 
@@ -496,7 +526,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         return;
     }
     
-    if(type.movement_type == 0){
+    if(type.movement_type == 0 && p.wetness == 0){
         p.idle_time = IdleTime;
         update_particle(p.position, p);
     }
@@ -511,6 +541,12 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
     if(type.movement_type == 4){ // fire
         handle_fire(p);
+    }
+    if(type.movement_type == 5){ // wood
+        handle_wood(p);
+    }
+    if(type.movement_type == 6){ // root
+        handle_wood(p);
     }
     if(p.type == 5){  // fire
         if(p.speed > 30.0 || is_idle(p)){
@@ -529,13 +565,12 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if(type.corrosive == 1){
         corrosive_neighbors(p);
     }
-    if(p.wetness > 0){
-        p.wetness = lerp(p.wetness, 0, DeltaTime / 5.0);
-        update_particle(p);
+    if(type.is_wet == 1){
+        soak_neighbors(p, 1.0);
     }
-    if(type.is_wet){
-        soak_neighbors(p);
+    if(type.share_wetness == 1){
+        soak_neighbors(p, p.wetness);
     }
-    handle_particle_movement(p);
+    if(type.movement_type != 0) handle_particle_movement(p);
 }
 

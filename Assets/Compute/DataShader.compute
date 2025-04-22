@@ -1,7 +1,5 @@
 #pragma kernel CSMain
 
-// #include "Assets/Compute/ParticleTypes.compute"
-
 const float2 DIR_UP = float2(0.0, 1.0);
 const float2 DIR_DOWN = float2(0.0, -1.0);
 const float2 DIR_LEFT = float2(-1.0, 0.0);
@@ -15,6 +13,7 @@ struct Particle {
     int type;
     float idle_time;
     float birth;
+    float wetness;
 };
 
 struct ParticleType {
@@ -24,12 +23,15 @@ struct ParticleType {
     int is_solid;
     int is_flammable;
     int is_abrasive;
+    int share_wetness;
+    int is_wet;
     int burns;
     int corrosive;
     float life_time;
     int on_death_emit;
     float on_death_spawn_chance;
 };
+
 
 float Size;
 float Time;

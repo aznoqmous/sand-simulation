@@ -12,6 +12,8 @@ public class ParticleResource : ScriptableObject {
     [Header("Effects")]
     public bool isFlammable;
     public bool isAbrasive;
+    public bool shareWetness;
+
     public bool isWet;
     public bool burns;
     public bool corrosive;
@@ -22,12 +24,35 @@ public class ParticleResource : ScriptableObject {
     public float onDeathSpawnChance;
 }
 
+public struct ParticleType 
+{
+    public Color color;
+    public int movementType;
+    public float dispersion;
+    public int isSolid;
+    
+    public int isFlammable;
+    public int isAbrasive;
+    public int shareWetness;
+
+    public int isWet;
+    public int burns;
+    public int corrosive;
+
+    public float lifeTime;
+    public int onDeathEmit;
+    public float onDeathSpawnChance;
+}
+
 public enum MovementType {
     Idle,
     Sand,
     Water,
     Gas,
-    Fire
+    Fire,
+    Wood,
+    Root,
+    Stem
 }
 public enum ParticleTypeEnum {
     Empty,
@@ -38,4 +63,7 @@ public enum ParticleTypeEnum {
     Fire,
     Gas,
     Acid,
+    Earth,
+    Root,
+    Stem
 }
