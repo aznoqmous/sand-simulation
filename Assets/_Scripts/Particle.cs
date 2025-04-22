@@ -8,6 +8,7 @@ public struct Particle {
     public int particleType;
     public float idleTime;
     public float birth;
+    public float wetness;
 }
 
 public struct ParticleType 
@@ -19,6 +20,7 @@ public struct ParticleType
     
     public int isFlammable;
     public int isAbrasive;
+    public int isWet;
     public int burns;
     public int corrosive;
 

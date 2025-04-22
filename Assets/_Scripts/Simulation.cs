@@ -79,6 +79,7 @@ public class Simulation : MonoBehaviour
                 + sizeof(int) // is solid
                 + sizeof(int) // is flammable
                 + sizeof(int) // is abrasive
+                + sizeof(int) // is wet
                 + sizeof(int) // burns
                 + sizeof(int) // corrosive
                 + sizeof(float) // lifeTime
@@ -95,6 +96,7 @@ public class Simulation : MonoBehaviour
                 p.isSolid = particleType.isSolid ? 1 : 0;
                 p.isFlammable = particleType.isFlammable ? 1 : 0;
                 p.isAbrasive = particleType.isAbrasive ? 1 : 0;
+                p.isWet = particleType.isWet ? 1 : 0;
                 p.burns = particleType.burns ? 1 : 0;
                 p.corrosive = particleType.corrosive ? 1 : 0;
                 p.lifeTime = particleType.lifeTime;
@@ -124,7 +126,6 @@ public class Simulation : MonoBehaviour
     }
 
     void UpdateChunks(){
-
         Vector3 playerPosition = _player.transform.position / _worldChunkSize;
         Vector2Int activeChunks = GetActiveChunks();
         for(int x = - activeChunks.x; x <= activeChunks.x; x++)

@@ -12,6 +12,7 @@ public class ParticleResource : ScriptableObject {
     [Header("Effects")]
     public bool isFlammable;
     public bool isAbrasive;
+    public bool isWet;
     public bool burns;
     public bool corrosive;
 

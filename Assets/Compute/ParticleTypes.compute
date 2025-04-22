@@ -11,6 +11,7 @@ struct Particle {
     int type;
     float idle_time;
     float birth;
+    float wetness;
 };
 
 struct ParticleType {
@@ -20,6 +21,7 @@ struct ParticleType {
     int is_solid;
     int is_flammable;
     int is_abrasive;
+    int is_wet;
     int burns;
     int corrosive;
     float life_time;

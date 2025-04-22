@@ -15,6 +15,7 @@ struct Particle {
     int type;
     float idle_time;
     float birth;
+    float wetness;
 };
 
 struct ParticleType {
@@ -24,6 +25,7 @@ struct ParticleType {
     int is_solid;
     int is_flammable;
     int is_abrasive;
+    int is_wet;
     int burns;
     int corrosive;
     float life_time;
@@ -177,8 +179,7 @@ void draw_particle(Particle p){
         noise = get_noise((ChunkPosition * Size + p.position) / 2.0);
     }
     Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
-
-    //Result[p.position] = float4(p.speed, abs(p.direction.x), abs(p.direction.y), 1.0);
+    if(!get_type(p).is_wet) Result[p.position] *= 1.0 - p.wetness / 3.0;
 }
 
 
@@ -425,6 +426,18 @@ bool handle_fire(inout Particle p){
     return false;
 }
 
+void soak(float2 position){
+    Particle p = get_particle(position);
+    p.wetness = lerp(p.wetness, 1.0, DeltaTime);
+    update_particle(position, p);
+}
+void soak_neighbors(inout Particle p){
+    if(!is_empty(p.position + float2(1.0, 0.0))) soak(p.position + float2(1.0, 0.0));
+    if(!is_empty(p.position + float2(-1.0, 0.0))) soak(p.position + float2(-1.0, 0.0));
+    if(!is_empty(p.position + float2(0.0, 2.0))) soak(p.position + float2(0.0, 2.0));
+    if(!is_empty(p.position + float2(0.0, -1.0))) soak(p.position + float2(0.0, -1.0));
+}
+
 [numthreads(8,8,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
@@ -515,6 +528,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
     if(type.corrosive == 1){
         corrosive_neighbors(p);
+    }
+    if(p.wetness > 0){
+        p.wetness = lerp(p.wetness, 0, DeltaTime / 5.0);
+        update_particle(p);
+    }
+    if(type.is_wet){
+        soak_neighbors(p);
     }
     handle_particle_movement(p);
 }
