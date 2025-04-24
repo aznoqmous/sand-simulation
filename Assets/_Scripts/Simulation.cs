@@ -79,7 +79,7 @@ public class Simulation : MonoBehaviour
                 + sizeof(int) // is solid
                 + sizeof(int) // is flammable
                 + sizeof(int) // is abrasive
-                + sizeof(int) // share wetness
+                + sizeof(float) // share wetness
                 + sizeof(int) // is wet
                 + sizeof(int) // burns
                 + sizeof(int) // corrosive
@@ -97,7 +97,7 @@ public class Simulation : MonoBehaviour
                 p.isSolid = particleType.isSolid ? 1 : 0;
                 p.isFlammable = particleType.isFlammable ? 1 : 0;
                 p.isAbrasive = particleType.isAbrasive ? 1 : 0;
-                p.shareWetness = particleType.shareWetness ? 1 : 0;
+                p.shareWetness = particleType.shareWetness;
                 p.isWet = particleType.isWet ? 1 : 0;
                 p.burns = particleType.burns ? 1 : 0;
                 p.corrosive = particleType.corrosive ? 1 : 0;

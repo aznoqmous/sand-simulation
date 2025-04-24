@@ -18,7 +18,7 @@ MonoBehaviour:
   isSolid: 1
   isFlammable: 0
   isAbrasive: 1
-  shareWetness: 1
+  shareWetness: 3
   isWet: 0
   burns: 0
   corrosive: 0

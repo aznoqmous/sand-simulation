@@ -169,6 +169,7 @@ public class Chunk : MonoBehaviour
             + sizeof(float) // idle time
             + sizeof(float) // birth
             + sizeof(float) // wetness
+            + sizeof(float) // power
         ;
         _particlesBuffer = new ComputeBuffer(Mathf.FloorToInt(Mathf.Pow(_size, 2f)), particleSize, ComputeBufferType.Structured, ComputeBufferMode.Immutable);
         

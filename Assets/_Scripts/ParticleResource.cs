@@ -12,7 +12,7 @@ public class ParticleResource : ScriptableObject {
     [Header("Effects")]
     public bool isFlammable;
     public bool isAbrasive;
-    public bool shareWetness;
+    public float shareWetness;
 
     public bool isWet;
     public bool burns;
@@ -33,7 +33,7 @@ public struct ParticleType
     
     public int isFlammable;
     public int isAbrasive;
-    public int shareWetness;
+    public float shareWetness;
 
     public int isWet;
     public int burns;

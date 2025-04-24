@@ -9,6 +9,7 @@ public struct Particle {
     public float idleTime;
     public float birth;
     public float wetness;
+    public float power;
 }
 
 

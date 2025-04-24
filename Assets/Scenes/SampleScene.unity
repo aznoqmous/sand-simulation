@@ -1531,7 +1531,7 @@ MonoBehaviour:
   _gravity: 98
   _idleTime: 1
   _seed: 123
-  _brushSize: 10
+  _brushSize: 2
   _createdType: 0
   _particleTypes:
   - {fileID: 11400000, guid: dbd4b3bf953952248b963dfe479933c0, type: 2}
