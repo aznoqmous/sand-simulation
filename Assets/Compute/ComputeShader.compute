@@ -6,6 +6,9 @@ const float2 DIR_DOWN = float2(0.0, -1.0);
 const float2 DIR_LEFT = float2(-1.0, 0.0);
 const float2 DIR_RIGHT = float2(1.0, 0.0);
 
+#define TRANSFER_SPEED_ROOT 10
+#define TRANSFER_SPEED_WOOD 10
+
 struct Particle {
     float2 position;
     float2 real_position;
@@ -151,6 +154,9 @@ bool is_empty(float2 position){
 float get_noise(float2 input){
     return unity_gradientNoise(input) * 0.5 + unity_gradientNoise(input / 3.5) * 0.5;
 }
+float get_noise_01(float2 input){
+    return (get_noise(input) + 1) / 2;
+}
 
 ParticleType get_type(Particle p){
     return Types[p.type];
@@ -186,7 +192,12 @@ void draw_particle(Particle p){
     Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
     if(!get_type(p).is_wet) Result[p.position] *= 1.0 - p.wetness / 2.0;
     if(p.power > 0) Result[p.position] *= 1 + p.power / 2.0;
-    // if(p.power > 0) Result[p.position] = float4(p.power, 0, 0, 1);
+    if(p.power > 0) Result[p.position] = float4(0, p.power, 0, 1);
+
+    /*if(p.type == 4){
+        Result[p.position] = float4((p.direction + 1)/2, 0, 1) * (1 + p.power / 2.0);
+    }*/
+    
 }
 
 
@@ -368,7 +379,7 @@ bool handle_water(inout Particle p){
 }
 
 void burn(float2 position, Particle particle){
-    if(rand(position) < DeltaTime) return;
+    if(rand(position) > DeltaTime) return;
     Particle p = get_particle(position);
     p.type = particle.type; // fire
     p.birth = Time;
@@ -438,72 +449,138 @@ void soak(float2 position, float value, Particle particle){
     Particle p = get_particle(position);
     if(value < p.wetness) return;
     p.wetness = lerp(p.wetness, value, DeltaTime * get_type(p).share_wetness);
+    p.wetness = min(1, p.wetness);
     update_particle(position, p);
     wake_particle(particle.position);
     wake_neighbors(particle.position);
 }
 
 void soak_neighbors(inout Particle p, float value){
-    soak(p.position + float2(1.0, 0.0), value, p);
-    soak(p.position + float2(-1.0, 0.0), value, p);
-    soak(p.position + float2(0.0, 1.0), value, p);
-    soak(p.position + float2(0.0, -1.0), value, p);
+    soak(p.position + float2(1, 0), value, p);
+    soak(p.position + float2(-1, 0), value, p);
+    soak(p.position + float2(0, 1), value, p);
+    soak(p.position + float2(0, -1), value, p);
 }
 int count_neighbor_of_type(float2 position, int type){
     int total = 0;
-    if(get_particle(position + float2(1.0, 0.0)).type == type) total++;
-    if(get_particle(position + float2(-1.0, 0.0)).type == type) total++;
-    if(get_particle(position + float2(0.0, 1.0)).type == type) total++;
-    if(get_particle(position + float2(0.0, -1.0)).type == type) total++;
+    if(get_particle(position + float2(1, 0)).type == type) total++;
+    if(get_particle(position + float2(-1, 0)).type == type) total++;
+    if(get_particle(position + float2(0, 1)).type == type) total++;
+    if(get_particle(position + float2(0, -1)).type == type) total++;
     return total;
 }
-void grow_root(float2 position, Particle p){
+bool grow_root(float2 position, Particle p){
     Particle b = get_particle(position);
-    if(b.type != 8 || b.wetness < 0.1) return;
-    if(count_neighbor_of_type(position, 9) > 1) return;
-    if(rand(position) > b.wetness * DeltaTime * get_noise(position / 5.0)) return;
-
+    if(b.type != 8 || b.wetness < 0.1) return false;
+    if(rand(position) > DeltaTime / b.wetness * get_noise_01(position / 4.0) / 10.0) return false;
+    if(count_neighbor_of_type(position, 9) > 1) return false;
     b.type = 9;
     b.direction = p.position - position;
     update_particle(position, b);
+    return true;
 }
 void grow_roots(Particle p){
-    grow_root(p.position + float2(1.0, 0.0), p);
-    grow_root(p.position + float2(-1.0, 0.0), p);
-    grow_root(p.position + float2(0.0, 1.0), p);
-    grow_root(p.position + float2(0.0, -1.0), p);
+    //if(rand(p.position) > DeltaTime) return;
+    if(grow_root(p.position + float2(0, -1), p)) return; // bottom
+    if(grow_root(p.position + float2(-1, 0), p)) return; // left
+    if(grow_root(p.position + float2(1, 0), p)) return; // right
+    if(grow_root(p.position + float2(0, 1), p)) return; // top
 }
 
-
-void transfer_power(float2 position, inout Particle p){
+void transfer_power(float2 position, inout Particle p, float value){
     Particle pb = get_particle(position);
-    pb.power = min(1.0, p.power + pb.power);
+    if(pb.power >= 1) return;
+    if(p.power <= 0) return;
+    pb.power = min(1.0, value + pb.power);
     update_particle(position, pb);
     wake_particle(position);
-    p.power = 0;
+    p.power = max(0, p.power - value);
     update_particle(p);
 }
-void transfer_power(inout Particle p){
+void transfer_power(inout Particle p, float value){
     float2 position = p.position + p.direction;
-    transfer_power(position, p);
+    transfer_power(position, p, value);
 }
 
+bool grow_wood(float2 position, Particle p){
+    Particle b = get_particle(position);
+    if(b.type != 0) return false;
+    if(count_neighbor_of_type(position, 0) < 3) return false;
+    //if(get_noise_01(position / 5.0) > 0.5 || rand(position) > DeltaTime) return;
+    b.type = 4;
+    b.direction = float2(0, 0);
+    update_particle(position, b);
+
+    p.power = 0;
+    p.direction = float2(0, 0);
+    update_particle(p);
+    return true;
+}
+void transfer_wood(float2 position, inout Particle p, float value){
+    Particle pb = get_particle(position);
+    if(pb.type != 4) return;
+    if(pb.power >= 1) return;
+    if(p.power <= 0) return;
+    pb.power = min(1.0, value + pb.power);
+    update_particle(position, pb);
+    p.power = max(0, p.power - value);
+    update_particle(p);
+}
+
+bool float2_equals(float2 a, float2 b){
+    return a.x == b.x && a.y == b.y;
+}
+
+bool initialize_wood_direction(inout Particle p, float2 direction){
+    Particle pb = get_particle(p.position + direction);
+    if(pb.type == 4 && !float2_equals(pb.direction, float2(0, 0) - direction)){
+        p.direction = direction;
+        update_particle(p);
+        return true;
+    }
+    return false;
+}
 
 void handle_wood(Particle p){
-    if(p.power >= 1) {
-        p.power = 0;
+    grow_roots(p);
+
+    if(p.power <= 0) return;
+    
+    // initialize wood direction
+    if(float2_equals(p.direction, float2(0,0)) || p.power >= 1){
+        p.direction = float2(0,0);
         update_particle(p);
+        if(initialize_wood_direction(p, float2(0, 1))) return; // top
+        if(initialize_wood_direction(p, float2(-1, 0))) return; // left
+        if(initialize_wood_direction(p, float2(1, 0))) return; // right
+        if(initialize_wood_direction(p, float2(0, -1))) return; // bottom
+        return;
     }
-    // if(get_particle(p.position + float2(1.0, 0.0)).type == 4) transfer_power(p.position + float2(1.0, 0.0), p);
-    // if(get_particle(p.position + float2(-1.0, 0.0)).type == 4) transfer_power(p.position + float2(-1.0, 0.0), p);
-    // if(get_particle(p.position + float2(0.0, 1.0)).type == 4) transfer_power(p.position + float2(0.0, 1.0), p);
-    // if(get_particle(p.position + float2(0.0, -1.0)).type == 4) transfer_power(p.position + float2(0.0, -1.0), p);
+
+    if(p.power >= 0.8){
+        if(grow_wood(p.position + float2(0, 1), p)) return; // top
+        if(grow_wood(p.position + float2(-1, 0), p)) return; // left
+        if(grow_wood(p.position + float2(1, 0), p)) return; // right
+        if(grow_wood(p.position + float2(0, -1), p)) return; // bottom
+        return;
+    }
+
+    transfer_wood(p.position + p.direction, p, p.power * DeltaTime * TRANSFER_SPEED_WOOD);
+}
+
+void handle_root_water(inout Particle p){
+    float r = 0;
+    r += get_particle(p.position + float2(0, 1)).wetness * DeltaTime;
+    r += get_particle(p.position + float2(1, 0)).wetness * DeltaTime;
+    r += get_particle(p.position + float2(-1, 0)).wetness * DeltaTime;
+    r += get_particle(p.position + float2(0, -1)).wetness * DeltaTime;
+    if(rand(p.position) < r / 10000.0) p.power = 1;
 }
 
 void handle_root(Particle p){
-    if(rand(p.position) < DeltaTime / 1000.0) {
-        transfer_power(p);
-        return;
+
+    if(p.power >= 0) {
+        transfer_power(p, p.power * DeltaTime * TRANSFER_SPEED_ROOT);
     }
 
     int earth_ns = count_neighbor_of_type(p.position, 8);
@@ -512,9 +589,11 @@ void handle_root(Particle p){
         return;
     }
 
-    if(p.power <= 0) grow_roots(p);
-    p.power += DeltaTime;
-    p.power = min(1.0, p.power);
+    handle_root_water(p);
+    //p.power = min(1.0, p.power);
+    grow_roots(p);
+ 
+    //p.power += DeltaTime;
     wake_particle(p.position);
     update_particle(p);
 }
@@ -541,6 +620,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         p.idle_time = 0;
         p.birth = Time;
         p.wetness = 0;
+        p.power = 0;
+        p.direction = float2(0,0);
         update_particle(p);
         wake_neighbors(p.position);
     }
@@ -576,13 +657,19 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     draw_particle(p);
     increment_particles_count();
 
-    if(p.type == 9){ // skip 1/2 root
-        if(Step % 2 == (p.position.x + p.position.y) % 2) return;
+    if(p.type == 9 || p.type == 4){ // skip 1/2 root 
+        //if(Step % 2 == (p.position.x + p.position.y) % 2) return;
+        if(Step == 0 && !(current_step.x % 2 == 0 && current_step.y % 2 == 0)) return;
+        if(Step == 1 && !(current_step.x % 2 == 1 && current_step.y % 2 == 0)) return;
+        if(Step == 2 && !(current_step.x % 2 == 0 && current_step.y % 2 == 1)) return;
+        if(Step == 3 && !(current_step.x % 2 == 1 && current_step.y % 2 == 1)) return;
     }
 
+    if(type.is_solid == 1) {
+        ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
+    }
     if(is_idle(p)){
         if(type.is_solid == 1) {
-            ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
             increment_solid_particles_count();
         }
         return;
@@ -608,12 +695,13 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         p.idle_time = 0;
         update_particle(p);
         handle_wood(p);
-        grow_roots(p);
+        return;
     }
     if(type.movement_type == 6){ // root
         p.idle_time = 0;
         update_particle(p);
         handle_root(p);
+        return;
     }
     if(p.type == 5){  // fire
         if(p.speed > 30.0 || is_idle(p)){
