@@ -100,7 +100,7 @@ Transform:
   m_GameObject: {fileID: 1996605969273502121}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 1}
   m_LocalScale: {x: 4, y: 4, z: 4}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -212,8 +212,8 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6240680986645269443}
-  - {fileID: 6835347837550151153}
   - {fileID: 2284089104826476092}
+  - {fileID: 6835347837550151153}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4894128201866133694
@@ -501,14 +501,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AlphaTolerance: 10
-  DistanceThreshold: 0
+  DistanceThreshold: 2
   Scale: 1
   Decompose: 0
   RunInPlayMode: 0
   UseCache: 0
   lastAlphaTolerance: 10
   lastScale: 1
-  lastDistanceThreshold: 0
+  lastDistanceThreshold: 2
   lastDecompose: 0
   lastSprite: {fileID: 0}
   lastRect:
@@ -716,7 +716,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 0, b: 0, a: 0}
+  m_Color: {r: 0.18100333, g: 1, b: 0, a: 0.47058824}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -750,7 +750,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &5567204025172143113
 RectTransform:
   m_ObjectHideFlags: 0
@@ -759,7 +759,7 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9135230772122636646}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.5}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

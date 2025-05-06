@@ -18,9 +18,10 @@ MonoBehaviour:
   isSolid: 0
   isFlammable: 0
   isAbrasive: 1
+  shareWetness: 0
+  isWet: 1
   burns: 0
   corrosive: 0
-  isWet: 1
   lifeTime: 0
   onDeathEmit: 0
   onDeathSpawnChance: 0

@@ -16,3 +16,12 @@ MonoBehaviour:
   movementType: 1
   dispersion: 1
   isSolid: 1
+  isFlammable: 0
+  isAbrasive: 0
+  shareWetness: 0
+  isWet: 0
+  burns: 0
+  corrosive: 0
+  lifeTime: 0
+  onDeathEmit: 0
+  onDeathSpawnChance: 0

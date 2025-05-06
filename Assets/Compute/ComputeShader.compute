@@ -1,13 +1,16 @@
 #pragma kernel CSMain
 #pragma use_dxc 
 
-const float2 DIR_UP = float2(0.0, 1.0);
-const float2 DIR_DOWN = float2(0.0, -1.0);
-const float2 DIR_LEFT = float2(-1.0, 0.0);
-const float2 DIR_RIGHT = float2(1.0, 0.0);
+#define DIR_UP float2(0, 1)
+#define DIR_DOWN float2(0, -1)
+#define DIR_LEFT float2(-1, 0)
+#define DIR_RIGHT float2(1, 0)
+#define DIR_ZERO float2(0, 0)
+#define DIR_ONE float2(1, 1)
 
 #define TRANSFER_SPEED_ROOT 10
 #define TRANSFER_SPEED_WOOD 10
+#define SIMULATION_SPEED 4
 
 struct Particle {
     float2 position;
@@ -43,6 +46,7 @@ float DeltaTime;
 float Gravity;
 bool MouseDown;
 bool DrawBounds;
+bool UseDeltaTime;
 int MouseType;
 int BrushSize;
 float2 ChunkPosition;
@@ -84,9 +88,9 @@ float unity_gradientNoise(float2 p)
     float2 ip = floor(p);
     float2 fp = frac(p);
     float d00 = dot(unity_gradientNoise_dir(ip), fp);
-    float d01 = dot(unity_gradientNoise_dir(ip + float2(0, 1)), fp - float2(0, 1));
-    float d10 = dot(unity_gradientNoise_dir(ip + float2(1, 0)), fp - float2(1, 0));
-    float d11 = dot(unity_gradientNoise_dir(ip + float2(1, 1)), fp - float2(1, 1));
+    float d01 = dot(unity_gradientNoise_dir(ip + DIR_UP), fp - DIR_UP);
+    float d10 = dot(unity_gradientNoise_dir(ip + DIR_RIGHT), fp - DIR_RIGHT);
+    float d11 = dot(unity_gradientNoise_dir(ip + DIR_ONE), fp - DIR_ONE);
     fp = fp * fp * fp * (fp * (fp * 6 - 15) + 10);
     return lerp(lerp(d00, d01, fp.y), lerp(d10, d11, fp.y), fp.x);
 }
@@ -96,8 +100,8 @@ float2 floor2(float2 movement){
 }
 
 float2 get_movement(float2 mov){
-    if(abs(mov.x) > abs(mov.y)) return abs(mov.x) >= 1 ? float2(sign(mov.x),  0.0) : float2(0.0, 0.0);
-    return abs(mov.y) >= 1 ? float2(0.0, sign(mov.y)) : float2(0.0, 0.0);
+    if(abs(mov.x) > abs(mov.y)) return abs(mov.x) >= 1 ? float2(sign(mov.x),  0) : DIR_ZERO;
+    return abs(mov.y) >= 1 ? float2(0, sign(mov.y)) : DIR_ZERO;
 }
 
 float fract(float x)
@@ -106,7 +110,7 @@ float fract(float x)
 }
 
 float rand(float2 c){
-    return fract(sin(dot(c.xy, float2(12.9898 + Time, 78.233))) * 43758.5453 * (Time % 2.0));
+    return fract(sin(dot(c.xy, float2(12.9898 + Time, 78.233))) * 43758.5453 * (Time % 2));
 }
 
 void draw(float2 position, float4 color){
@@ -122,10 +126,10 @@ int position_to_id(float x, float y){
 
 void update_particle(float2 position, Particle p)
 {
-    if(position.y < 0.0) BottomChunkParticles[position_to_id(position.x, (Size - 1.0))] = p;
-    else if(position.y > Size - 1.0) TopChunkParticles[position_to_id(position.x, 0.0)] = p;
-    else if(position.x < 0.0) LeftChunkParticles[position_to_id((Size - 1.0), position.y)] = p;
-    else if(position.x > Size - 1.0) RightChunkParticles[position_to_id(0, position.y)] = p;
+    if(position.y < 0) BottomChunkParticles[position_to_id(position.x, (Size - 1))] = p;
+    else if(position.y > Size - 1) TopChunkParticles[position_to_id(position.x, 0)] = p;
+    else if(position.x < 0) LeftChunkParticles[position_to_id((Size - 1), position.y)] = p;
+    else if(position.x > Size - 1) RightChunkParticles[position_to_id(0, position.y)] = p;
     else Particles[position.x * Size + position.y] = p;
 }
 
@@ -134,10 +138,10 @@ void update_particle(Particle p){
 }
 
 Particle get_particle(float2 position){
-    if(position.y < 0.0) return BottomChunkParticles[position_to_id(position.x, (Size - 1.0))];
-    if(position.y > Size - 1.0) return TopChunkParticles[position_to_id(position.x, 0.0)];
-    if(position.x < 0.0) return LeftChunkParticles[position_to_id((Size - 1.0), position.y)];
-    if(position.x > Size - 1.0) return RightChunkParticles[position_to_id(0, position.y)];
+    if(position.y < 0) return BottomChunkParticles[position_to_id(position.x, (Size - 1))];
+    if(position.y > Size - 1) return TopChunkParticles[position_to_id(position.x, 0)];
+    if(position.x < 0) return LeftChunkParticles[position_to_id((Size - 1), position.y)];
+    if(position.x > Size - 1) return RightChunkParticles[position_to_id(0, position.y)];
     return Particles[position.x * Size + position.y];
 }
 bool is_idle(Particle p){
@@ -165,37 +169,41 @@ ParticleType get_type(float2 position){
     return Types[get_particle(position).type];
 }
 void draw_particle(Particle p){
-    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    Result[p.position] = float4(0, 0, 0, 0);
     if(p.type == 0) return;
     
     float4 color = Types[p.type].color;
+
+    if(is_idle(p) && Types[p.type].is_solid){
+        Result[p.position] = float4(1, 0, 0, 1);
+        return;
+    }
+    else {
+        Result[p.position] = float4(0, 1, 0, 1);
+        return;
+    }
     
-    // if(is_idle(p)){
-    //     Result[p.position] = float4(0, 1, 0, 1);
-    //     return;
-    // }
-    
-    float noise = 1.0;
+    float noise = 1;
     if(p.type == 1) { // stone
-        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2.0);
+        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2);
     }
     else if(p.type == 3) { // water
-        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2.0 + float2(Time, Time));
+        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2 + float2(Time, Time));
         color.w = 0.5;
     }
     else if(get_type(p).burns == 1) { // fire
-        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2.0 - float2(Time, Time));
+        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2 - float2(Time, Time));
     }
     else {
-        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2.0);
+        noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2);
     }
-    Result[p.position] = color * (float4(1.0, 1.0, 1.0, 1.0) * (noise * 0.6 + 1.0));
-    if(!get_type(p).is_wet) Result[p.position] *= 1.0 - p.wetness / 2.0;
-    if(p.power > 0) Result[p.position] *= 1 + p.power / 2.0;
+    Result[p.position] = color * (float4(1, 1, 1, 1) * (noise * 0.6 + 1));
+    if(!get_type(p).is_wet) Result[p.position] *= 1 - p.wetness / 2;
+    if(p.power > 0) Result[p.position] *= 1 + p.power / 2;
     if(p.power > 0) Result[p.position] = float4(0, p.power, 0, 1);
 
     /*if(p.type == 4){
-        Result[p.position] = float4((p.direction + 1)/2, 0, 1) * (1 + p.power / 2.0);
+        Result[p.position] = float4((p.direction + 1)/2, 0, 1) * (1 + p.power / 2);
     }*/
     
 }
@@ -203,10 +211,10 @@ void draw_particle(Particle p){
 
 
 void wake_particle_chunk(float2 position){
-    if(position.x < 0.0) InterlockedAdd(States[1], 1);
-    else if(position.y > Size - 1.0) InterlockedAdd(States[2], 1);
-    else if(position.x > Size - 1.0) InterlockedAdd(States[3], 1);
-    else if(position.y < 0.0) InterlockedAdd(States[4], 1);
+    if(position.x < 0) InterlockedAdd(States[1], 1);
+    else if(position.y > Size - 1) InterlockedAdd(States[2], 1);
+    else if(position.x > Size - 1) InterlockedAdd(States[3], 1);
+    else if(position.y < 0) InterlockedAdd(States[4], 1);
     else InterlockedAdd(States[0], 1);
 }
 
@@ -219,24 +227,24 @@ void wake_particle(float2 position){
 }
 
 void wake_neighbors(float2 position){
-    wake_particle(position + float2(0, -1));
-    wake_particle(position + float2(0, 1));
-    wake_particle(position + float2(-1, 0));
-    wake_particle(position + float2(1, 0));
+    wake_particle(position + DIR_DOWN);
+    wake_particle(position + DIR_UP);
+    wake_particle(position + DIR_LEFT);
+    wake_particle(position + DIR_RIGHT);
 }
 
 void erase_particle(Particle p){
-    Result[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    Result[p.position] = float4(0, 0, 0, 0);
 }
 void delete_particle(float2 position){
-    if(position.y < 0.0) BottomChunkParticles[position_to_id(position.x, (Size - 1.0))].type = 0;
-    else if(position.y > Size - 1.0) TopChunkParticles[position_to_id(position.x, 0.0)].type = 0;
-    else if(position.x < 0.0) LeftChunkParticles[position_to_id((Size - 1.0), position.y)].type = 0;
-    else if(position.x > Size - 1.0) RightChunkParticles[position_to_id(0, position.y)].type = 0;
+    if(position.y < 0) BottomChunkParticles[position_to_id(position.x, (Size - 1))].type = 0;
+    else if(position.y > Size - 1) TopChunkParticles[position_to_id(position.x, 0)].type = 0;
+    else if(position.x < 0) LeftChunkParticles[position_to_id((Size - 1), position.y)].type = 0;
+    else if(position.x > Size - 1) RightChunkParticles[position_to_id(0, position.y)].type = 0;
     else Particles[position.x * Size + position.y].type = 0;
 }
 void delete_particle(Particle p){
-    if((rand(p.position) * 1000.0) % 100 / 100 < get_type(p).on_death_spawn_chance) p.type = get_type(p).on_death_emit;
+    if((rand(p.position) * 1000) % 100 / 100 < get_type(p).on_death_spawn_chance) p.type = get_type(p).on_death_emit;
     else p.type = 0;
     p.birth = Time;
     update_particle(p);
@@ -248,37 +256,37 @@ void move_particle(inout Particle particle, float2 movement){
     float2 originalPosition = particle.position;
     int targetId = targetPosition.x * Size + targetPosition.y;
     int currentId = particle.position.x * Size + particle.position.y;
-
-    wake_particle(targetPosition);
+    
+    particle.idle_time = 0;
     
     Particle targetParticle = Particles[targetId];
     
-    if(targetPosition.y < 0.0){
-        targetPosition.y = Size - 1.0;
+    if(targetPosition.y < 0){
+        targetPosition.y = Size - 1;
         targetId = position_to_id(targetPosition);
         targetParticle = BottomChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.real_position = particle.position;
         BottomChunkParticles[targetId] = particle;
     }
-    else if(targetPosition.y > Size - 1.0){
-        targetPosition.y = 0.0;
+    else if(targetPosition.y > Size - 1){
+        targetPosition.y = 0;
         targetId = position_to_id(targetPosition);
         targetParticle = TopChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.real_position = particle.position;
         TopChunkParticles[targetId] = particle;
     }
-    else if(targetPosition.x < 0.0){
-        targetPosition.x = Size - 1.0;
+    else if(targetPosition.x < 0){
+        targetPosition.x = Size - 1;
         targetId = position_to_id(targetPosition);
         targetParticle = LeftChunkParticles[targetId];
         particle.position = targetParticle.position;
         particle.real_position = particle.position;
         LeftChunkParticles[targetId] = particle;
     }
-    else if(targetPosition.x > Size - 1.0){
-        targetPosition.x = 0.0;
+    else if(targetPosition.x > Size - 1){
+        targetPosition.x = 0;
         targetId = position_to_id(targetPosition);
         targetParticle = RightChunkParticles[targetId];
         particle.position = targetParticle.position;
@@ -293,85 +301,101 @@ void move_particle(inout Particle particle, float2 movement){
 
     targetParticle.position = originalPosition;
     targetParticle.real_position = originalPosition;
+    targetParticle.idle_time = 0;
     Particles[currentId] = targetParticle;
 
 }
 
-void move_toward(inout Particle p, float2 direction, float speed=5.0){
-    p.direction += direction * DeltaTime * speed;
+void move_toward(inout Particle p, float2 direction, float speed=5){
+    if(!UseDeltaTime) {
+        wake_particle(p.position);
+        wake_neighbors(p.position);
+        move_particle(p, direction);
+        InterlockedAdd(States[0], 1);
+        return;
+    }
+    p.direction += direction * DeltaTime * speed * SIMULATION_SPEED;
     p.direction = normalize(p.direction);
     p.speed += speed * DeltaTime;
     update_particle(p);
 }
 
-void handle_particle_movement(inout Particle p){
-    p.speed *= 1 - DeltaTime;
+bool float2_equals(float2 a, float2 b){
+    return a.x == b.x && a.y == b.y;
+}
 
-    if(p.speed < 0.1) p.idle_time += DeltaTime;
-    else {
-        p.real_position += p.direction * p.speed * DeltaTime * 10.0;
-        wake_particle(p.position);
-        wake_neighbors(p.position);
-    }
+void handle_particle_movement(inout Particle p){
+    //if(is_idle(p)) return;
+    p.idle_time += DeltaTime;
+    if(!UseDeltaTime) return;
+
+    p.speed *= 1 - DeltaTime;
+    p.real_position += p.direction * p.speed * DeltaTime * 10;
 
     update_particle(p.position, p);
     
-    if(is_idle(p)) return;
 
     float2 mov = get_movement(p.real_position - p.position);
     
-    if(mov.x == 0.0 && mov.y == 0.0) return;
-    
+    if(float2_equals(mov, DIR_ZERO)) {
+        InterlockedAdd(States[0], 1);
+        return;
+    }
+
     if(!is_empty(p.position + mov)){
         p.real_position = p.position;
         p.direction *= float2(1 - abs(mov.x), 1 - abs(mov.y));
-        // p.direction = float2(0.0, 0.0);
-        p.speed *= 1.0 - 1.0 / (get_type(p).dispersion + 1.0);
+        p.speed *= 1 - 1 / (get_type(p).dispersion + 1);
         update_particle(p.position, p);
+        InterlockedAdd(States[0], 1);
         return;
     }
-    
+
+    wake_particle(p.position);
+    wake_neighbors(p.position);
+
     move_particle(p, mov);
+    
 }
 
 bool handle_sand(inout Particle p)
 {
-    if(is_empty(p.position + float2(0.0, -1.0))) {
-        move_toward(p, float2(0.0, -1.0), Gravity);
+    if(is_empty(p.position + DIR_DOWN)) {
+        move_toward(p, DIR_DOWN, Gravity);
         return true;
     }
     else {
-        if (is_empty(p.position + float2(1, 0)) && is_empty(p.position + float2(1, -1)))
+        if (is_empty(p.position + DIR_RIGHT) && is_empty(p.position + float2(1, -1)))
         {
-            move_toward(p, float2(1.0, 0.0), Gravity);
+            move_toward(p, DIR_RIGHT, Gravity);
             return true;
         }
-        else if (is_empty(p.position + float2(-1, 0)) && is_empty(p.position + float2(-1, -1)))
+        else if (is_empty(p.position + DIR_LEFT) && is_empty(p.position + float2(-1, -1)))
         {
-            move_toward(p, float2(-1.0, 0.0), Gravity);
+            move_toward(p, DIR_LEFT, Gravity);
             return true;
         }
     }
-
+    
     return false;
 }
 
 bool handle_water(inout Particle p){
 
     if(handle_sand(p)) return true;
-    if (int(rand(p.position) * 100000.0) % 2 == 0 && is_empty(p.position + float2(1, 0)))
+    if (int(rand(p.position) * 100000) % 2 == 0 && is_empty(p.position + DIR_RIGHT))
     {
-        move_toward(p, float2(1.0, 0.0), Gravity);
+        move_toward(p, DIR_RIGHT, Gravity);
         return true;
     }
-    if (is_empty(p.position + float2(-1, 0)))
+    if (is_empty(p.position + DIR_LEFT))
     {
-        move_toward(p, float2(-1.0, 0.0), Gravity);
+        move_toward(p, DIR_LEFT, Gravity);
         return true;
     }
-    if (is_empty(p.position + float2(1, 0)))
+    if (is_empty(p.position + DIR_RIGHT))
     {
-        move_toward(p, float2(1.0, 0.0), Gravity);
+        move_toward(p, DIR_RIGHT, Gravity);
         return true;
     }
 
@@ -386,38 +410,38 @@ void burn(float2 position, Particle particle){
     update_particle(position, p);
 }
 void burns_neighbors(Particle p){
-    if(get_type(p.position + float2(1.0, 0.0)).is_flammable == 1) burn(p.position + float2(1.0, 0.0), p);
-    if(get_type(p.position + float2(-1.0, 0.0)).is_flammable == 1) burn(p.position + float2(-1.0, 0.0), p);
-    if(get_type(p.position + float2(0.0, 1.0)).is_flammable == 1) burn(p.position + float2(0.0, 1.0), p);
-    if(get_type(p.position + float2(0.0, -1.0)).is_flammable == 1) burn(p.position + float2(0.0, -1.0), p);
+    if(get_type(p.position + DIR_RIGHT).is_flammable == 1) burn(p.position + DIR_RIGHT, p);
+    if(get_type(p.position + DIR_LEFT).is_flammable == 1) burn(p.position + DIR_LEFT, p);
+    if(get_type(p.position + DIR_UP).is_flammable == 1) burn(p.position + DIR_UP, p);
+    if(get_type(p.position + DIR_DOWN).is_flammable == 1) burn(p.position + DIR_DOWN, p);
 }
 void corrosive(float2 position, Particle particle){
-    if((rand(position) * 10000000.0) % 100 > 1) return;
+    if((rand(position) * 10000000) % 100 > 1) return;
     Particle p = get_particle(position);
     delete_particle(position);
     delete_particle(particle);
 }
 void corrosive_neighbors(Particle p){
-    if(get_type(p.position + float2(1.0, 0.0)).is_abrasive) corrosive(p.position + float2(1.0, 0.0), p);
-    if(get_type(p.position + float2(-1.0, 0.0)).is_abrasive) corrosive(p.position + float2(-1.0, 0.0), p);
-    if(get_type(p.position + float2(0.0, 1.0)).is_abrasive) corrosive(p.position + float2(0.0, 1.0), p);
-    if(get_type(p.position + float2(0.0, -1.0)).is_abrasive) corrosive(p.position + float2(0.0, -1.0), p);
+    if(get_type(p.position + DIR_RIGHT).is_abrasive) corrosive(p.position + DIR_RIGHT, p);
+    if(get_type(p.position + DIR_LEFT).is_abrasive) corrosive(p.position + DIR_LEFT, p);
+    if(get_type(p.position + DIR_UP).is_abrasive) corrosive(p.position + DIR_UP, p);
+    if(get_type(p.position + DIR_DOWN).is_abrasive) corrosive(p.position + DIR_DOWN, p);
 }
 bool handle_gas(inout Particle p)
 {
-    if(is_empty(p.position + float2(0.0, 1.0))) {
-        move_toward(p, float2(0.0, 1.0), Gravity);
+    if(is_empty(p.position + DIR_UP)) {
+        move_toward(p, DIR_UP, Gravity);
         return true;
     }
     else {
-        if (is_empty(p.position + float2(1, 0)) && is_empty(p.position + float2(1, 1)))
+        if (is_empty(p.position + DIR_RIGHT) && is_empty(p.position + DIR_ONE))
         {
-            move_toward(p, float2(1.0, 0.0), Gravity);
+            move_toward(p, DIR_RIGHT, Gravity);
             return true;
         }
-        else if (is_empty(p.position + float2(-1, 0)) && is_empty(p.position + float2(-1, 1)))
+        else if (is_empty(p.position + DIR_LEFT) && is_empty(p.position + float2(-1, 1)))
         {
-            move_toward(p, float2(-1.0, 0.0), Gravity);
+            move_toward(p, DIR_LEFT, Gravity);
             return true;
         }
     }
@@ -425,19 +449,19 @@ bool handle_gas(inout Particle p)
 }
 bool handle_fire(inout Particle p){
     if(handle_gas(p)) return true;
-    if (int(rand(p.position) * 100000.0) % 2 == 0 && is_empty(p.position + float2(1, 0)))
+    if (int(rand(p.position) * 100000) % 2 == 0 && is_empty(p.position + DIR_RIGHT))
     {
-        move_toward(p, float2(1.0, 0.0), Gravity);
+        move_toward(p, DIR_RIGHT, Gravity);
         return true;
     }
-    if (is_empty(p.position + float2(-1, 0)))
+    if (is_empty(p.position + DIR_LEFT))
     {
-        move_toward(p, float2(-1.0, 0.0), Gravity);
+        move_toward(p, DIR_LEFT, Gravity);
         return true;
     }
-    if (is_empty(p.position + float2(1, 0)))
+    if (is_empty(p.position + DIR_RIGHT))
     {
-        move_toward(p, float2(1.0, 0.0), Gravity);
+        move_toward(p, DIR_RIGHT, Gravity);
         return true;
     }
 
@@ -456,23 +480,23 @@ void soak(float2 position, float value, Particle particle){
 }
 
 void soak_neighbors(inout Particle p, float value){
-    soak(p.position + float2(1, 0), value, p);
-    soak(p.position + float2(-1, 0), value, p);
-    soak(p.position + float2(0, 1), value, p);
-    soak(p.position + float2(0, -1), value, p);
+    soak(p.position + DIR_RIGHT, value, p);
+    soak(p.position + DIR_LEFT, value, p);
+    soak(p.position + DIR_UP, value, p);
+    soak(p.position + DIR_DOWN, value, p);
 }
 int count_neighbor_of_type(float2 position, int type){
     int total = 0;
-    if(get_particle(position + float2(1, 0)).type == type) total++;
-    if(get_particle(position + float2(-1, 0)).type == type) total++;
-    if(get_particle(position + float2(0, 1)).type == type) total++;
-    if(get_particle(position + float2(0, -1)).type == type) total++;
+    if(get_particle(position + DIR_RIGHT).type == type) total++;
+    if(get_particle(position + DIR_LEFT).type == type) total++;
+    if(get_particle(position + DIR_UP).type == type) total++;
+    if(get_particle(position + DIR_DOWN).type == type) total++;
     return total;
 }
 bool grow_root(float2 position, Particle p){
     Particle b = get_particle(position);
     if(b.type != 8 || b.wetness < 0.1) return false;
-    if(rand(position) > DeltaTime / b.wetness * get_noise_01(position / 4.0) / 10.0) return false;
+    if(rand(position) > DeltaTime / b.wetness * get_noise_01(position / 4) / 10) return false;
     if(count_neighbor_of_type(position, 9) > 1) return false;
     b.type = 9;
     b.direction = p.position - position;
@@ -481,17 +505,17 @@ bool grow_root(float2 position, Particle p){
 }
 void grow_roots(Particle p){
     //if(rand(p.position) > DeltaTime) return;
-    if(grow_root(p.position + float2(0, -1), p)) return; // bottom
-    if(grow_root(p.position + float2(-1, 0), p)) return; // left
-    if(grow_root(p.position + float2(1, 0), p)) return; // right
-    if(grow_root(p.position + float2(0, 1), p)) return; // top
+    if(grow_root(p.position + DIR_DOWN, p)) return; // bottom
+    if(grow_root(p.position + DIR_LEFT, p)) return; // left
+    if(grow_root(p.position + DIR_RIGHT, p)) return; // right
+    if(grow_root(p.position + DIR_UP, p)) return; // top
 }
 
 void transfer_power(float2 position, inout Particle p, float value){
     Particle pb = get_particle(position);
     if(pb.power >= 1) return;
     if(p.power <= 0) return;
-    pb.power = min(1.0, value + pb.power);
+    pb.power = min(1, value + pb.power);
     update_particle(position, pb);
     wake_particle(position);
     p.power = max(0, p.power - value);
@@ -506,13 +530,13 @@ bool grow_wood(float2 position, Particle p){
     Particle b = get_particle(position);
     if(b.type != 0) return false;
     if(count_neighbor_of_type(position, 0) < 3) return false;
-    //if(get_noise_01(position / 5.0) > 0.5 || rand(position) > DeltaTime) return;
+    //if(get_noise_01(position / 5) > 0.5 || rand(position) > DeltaTime) return;
     b.type = 4;
-    b.direction = float2(0, 0);
+    b.direction = DIR_ZERO;
     update_particle(position, b);
 
     p.power = 0;
-    p.direction = float2(0, 0);
+    p.direction = DIR_ZERO;
     update_particle(p);
     return true;
 }
@@ -521,19 +545,15 @@ void transfer_wood(float2 position, inout Particle p, float value){
     if(pb.type != 4) return;
     if(pb.power >= 1) return;
     if(p.power <= 0) return;
-    pb.power = min(1.0, value + pb.power);
+    pb.power = min(1, value + pb.power);
     update_particle(position, pb);
     p.power = max(0, p.power - value);
     update_particle(p);
 }
 
-bool float2_equals(float2 a, float2 b){
-    return a.x == b.x && a.y == b.y;
-}
-
 bool initialize_wood_direction(inout Particle p, float2 direction){
     Particle pb = get_particle(p.position + direction);
-    if(pb.type == 4 && !float2_equals(pb.direction, float2(0, 0) - direction)){
+    if(pb.type == 4 && !float2_equals(pb.direction, DIR_ZERO - direction)){
         p.direction = direction;
         update_particle(p);
         return true;
@@ -550,18 +570,18 @@ void handle_wood(Particle p){
     if(float2_equals(p.direction, float2(0,0)) || p.power >= 1){
         p.direction = float2(0,0);
         update_particle(p);
-        if(initialize_wood_direction(p, float2(0, 1))) return; // top
-        if(initialize_wood_direction(p, float2(-1, 0))) return; // left
-        if(initialize_wood_direction(p, float2(1, 0))) return; // right
-        if(initialize_wood_direction(p, float2(0, -1))) return; // bottom
+        if(initialize_wood_direction(p, DIR_UP)) return; // top
+        if(initialize_wood_direction(p, DIR_LEFT)) return; // left
+        if(initialize_wood_direction(p, DIR_RIGHT)) return; // right
+        if(initialize_wood_direction(p, DIR_DOWN)) return; // bottom
         return;
     }
 
     if(p.power >= 0.8){
-        if(grow_wood(p.position + float2(0, 1), p)) return; // top
-        if(grow_wood(p.position + float2(-1, 0), p)) return; // left
-        if(grow_wood(p.position + float2(1, 0), p)) return; // right
-        if(grow_wood(p.position + float2(0, -1), p)) return; // bottom
+        if(grow_wood(p.position + DIR_UP, p)) return; // top
+        if(grow_wood(p.position + DIR_LEFT, p)) return; // left
+        if(grow_wood(p.position + DIR_RIGHT, p)) return; // right
+        if(grow_wood(p.position + DIR_DOWN, p)) return; // bottom
         return;
     }
 
@@ -570,11 +590,11 @@ void handle_wood(Particle p){
 
 void handle_root_water(inout Particle p){
     float r = 0;
-    r += get_particle(p.position + float2(0, 1)).wetness * DeltaTime;
-    r += get_particle(p.position + float2(1, 0)).wetness * DeltaTime;
-    r += get_particle(p.position + float2(-1, 0)).wetness * DeltaTime;
-    r += get_particle(p.position + float2(0, -1)).wetness * DeltaTime;
-    if(rand(p.position) < r / 10000.0) p.power = 1;
+    r += get_particle(p.position + DIR_UP).wetness * DeltaTime;
+    r += get_particle(p.position + DIR_RIGHT).wetness * DeltaTime;
+    r += get_particle(p.position + DIR_LEFT).wetness * DeltaTime;
+    r += get_particle(p.position + DIR_DOWN).wetness * DeltaTime;
+    if(rand(p.position) < r / 10000) p.power = 1;
 }
 
 void handle_root(Particle p){
@@ -590,7 +610,7 @@ void handle_root(Particle p){
     }
 
     handle_root_water(p);
-    //p.power = min(1.0, p.power);
+    //p.power = min(1, p.power);
     grow_roots(p);
  
     //p.power += DeltaTime;
@@ -613,7 +633,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     Particle p = Particles[current_step.x * Size + current_step.y];
     ParticleType type = get_type(p);
 
-    ColliderTexture[p.position] = float4(0.0, 0.0, 0.0, 0.0);
+    ColliderTexture[p.position] = float4(0, 0, 0, 0);
     
     if(distance(MousePosition, p.position) < BrushSize && MouseDown){
         p.type = MouseType;
@@ -636,9 +656,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         if(DrawBounds){
             //Result[current_step.xy] = float4(1,1,1,0.1);
             if(current_step.x == 0) Result[current_step.xy] = float4(1,1,1,1);
-            if(current_step.x >= (Size - 1.0)) Result[current_step.xy] = float4(1,1,1,1);
+            if(current_step.x >= (Size - 1)) Result[current_step.xy] = float4(1,1,1,1);
             if(current_step.y == 0) Result[current_step.xy] = float4(1,1,1,1);
-            if(current_step.y >= (Size - 1.0)) Result[current_step.xy] = float4(1,1,1,1);
+            if(current_step.y >= (Size - 1)) Result[current_step.xy] = float4(1,1,1,1);
         }
         return;
     }
@@ -650,7 +670,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     if(p.wetness > 0){
-        p.wetness = lerp(p.wetness, 0, DeltaTime / 10.0);
+        p.wetness = lerp(p.wetness, 0, DeltaTime / 10);
         update_particle(p);
     }
 
@@ -665,11 +685,10 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         if(Step == 3 && !(current_step.x % 2 == 1 && current_step.y % 2 == 1)) return;
     }
 
-    if(type.is_solid == 1) {
-        ColliderTexture[p.position] = float4(1.0, 1.0, 1.0, 1.0);
-    }
+    
     if(is_idle(p)){
         if(type.is_solid == 1) {
+            ColliderTexture[p.position] = float4(1, 1, 1, 1);
             increment_solid_particles_count();
         }
         return;
@@ -704,12 +723,12 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         return;
     }
     if(p.type == 5){  // fire
-        if(p.speed > 30.0 || is_idle(p)){
+        if(p.speed > 30 || is_idle(p)){
             delete_particle(p);
             return;
         }
-        ParticleType toptype = get_type(p.position + float2(0, 1));
-        if(!is_empty(p.position + float2(0, 1)) && !toptype.is_flammable && !toptype.burns){
+        ParticleType toptype = get_type(p.position + DIR_UP);
+        if(!is_empty(p.position + DIR_UP) && !toptype.is_flammable && !toptype.burns){
             delete_particle(p);
             return;
         }
@@ -720,12 +739,12 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if(type.corrosive == 1){
         corrosive_neighbors(p);
     }
-    if(type.is_wet == 1){
-        soak_neighbors(p, 1.0);
+    /*if(type.is_wet == 1){
+        soak_neighbors(p, 1);
     }
     if(type.share_wetness > 0){
         soak_neighbors(p, p.wetness);
-    }
+    }*/
     if(type.movement_type != 0) handle_particle_movement(p);
 }
 

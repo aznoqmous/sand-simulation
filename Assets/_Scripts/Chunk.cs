@@ -6,7 +6,6 @@ using UnityEngine.UI;
 using System;
 using TMPro;
 using System.IO;
-using NUnit.Framework;
 public class Chunk : MonoBehaviour
 {
     [SerializeField] ComputeShader _computeShader;
@@ -129,7 +128,7 @@ public class Chunk : MonoBehaviour
 
     void InitParticles()
     {
-        bool generateParticles = !(_simulation.UseStorage && HasSaveFile());
+        bool generateParticles = !(_simulation.UseStorage && HasSaveFile()) && _simulation.ProceduralGeneration;
         List<Particle> _particles = new List<Particle>();
         for(int x = 0; x < _size; x++){
             for(int y = 0; y < _size; y++){
@@ -148,9 +147,9 @@ public class Chunk : MonoBehaviour
                         (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                         (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                     );
-                    if(density < 0.2f && moist > 0.5f) p.particleType = 3; // water
-                    else if(density > 0.8) p.particleType = 1; // stone
-                    else if(density > 0.5) {
+                    if(density > 0.8f && moist > 0.5f) p.particleType = 3; // water
+                    else if(density > 0.7) p.particleType = 1; // stone
+                    else if(density > 0.6) {
                         if(moist < 0.2f) p.particleType = 2; // sand
                         else p.particleType = 8; // earth
                     }
@@ -206,6 +205,7 @@ public class Chunk : MonoBehaviour
         _computeShader.SetVector("MousePosition", mousePosition);
         _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
+        _computeShader.SetBool("UseDeltaTime", _simulation.UseDeltaTime);
         _computeShader.SetInt("MouseType", _simulation.CreatedType);
         _computeShader.SetInt("BrushSize", _simulation.BrushSize);
         _computeShader.SetFloat("IdleTime", _simulation.IdleTime);
@@ -249,7 +249,7 @@ public class Chunk : MonoBehaviour
 
     public void SetActiveState(bool state=true){
         _isActiveState = state;
-        // _testImage.enabled = state;
+        _testImage.enabled = state;
     }
 
     public void SetSize(int size){
@@ -320,6 +320,7 @@ public class Chunk : MonoBehaviour
     float _lastUpdateColliderTime = 0;
     public float TimeSinceLastUpdateColliderTime => Time.time - _lastUpdateColliderTime;
     public float LastUpdateColliderTime => _lastUpdateColliderTime;
+    public bool HasNoCollider => _lastUpdateColliderTime == 0;
     public void UpdateCollider()
     {
         if(_texture == null) _texture = new Texture2D(_size, _size, TextureFormat.RGBA32, false);

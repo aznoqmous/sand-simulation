@@ -13,8 +13,14 @@ public class Simulation : MonoBehaviour
     [SerializeField] int _chunkScale = 4;
     [SerializeField] float _activeChunkDistance = 1.5f;
     [SerializeField] bool _drawBounds = false;
-    [SerializeField] bool _useStorage = false; 
+    [SerializeField] bool _useStorage = false;
     public bool UseStorage => _useStorage;
+
+    [SerializeField] bool _proceduralGeneration = false;
+    public bool ProceduralGeneration => _proceduralGeneration;
+    
+    [SerializeField] bool _useDeltaTime = false;
+    public bool UseDeltaTime => _useDeltaTime;
     
     [Header("Colliders")]
     [SerializeField] bool _generateColliders = false;
@@ -224,7 +230,7 @@ public class Simulation : MonoBehaviour
         foreach(Chunk chunk in _chunks.Values){
             chunk.TestImage.enabled = false;
             chunk.DebugText.enabled = false;
-            if(!chunk.NeedsUpdate) continue;
+            if(!chunk.HasNoCollider && !chunk.NeedsUpdate) continue;
             
             chunk.SortValue = 0;
             if(chunk.LastUpdateColliderTime == 0) chunk.SortValue += 100f;
@@ -241,7 +247,7 @@ public class Simulation : MonoBehaviour
             _sortedChunks.Add(chunk);
             
             Color c = Color.red;
-            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1) / 100f;
+            c.a = Mathf.Min(chunk.SortValue / 10.0f, 1);
             chunk.TestImage.color = c;
             chunk.TestImage.enabled = _colliderDebug;
 
