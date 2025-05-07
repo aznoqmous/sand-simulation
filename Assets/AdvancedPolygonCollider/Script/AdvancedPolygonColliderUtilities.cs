@@ -72,16 +72,7 @@ namespace DigitalRuby.AdvancedPolygonCollider
 
             solidsLength = colors.Length;
 
-            List<Vertices> detectedVerticesList = DetectVertices();
-
-            List<Vertices> result = new List<Vertices>();
-
-            for (int i = 0; i < detectedVerticesList.Count; i++)
-            {
-                result.Add(detectedVerticesList[i]);
-            }
-
-            return result;
+            return DetectVertices();
         }
 
         public List<Vertices> DetectVertices()

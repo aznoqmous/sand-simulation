@@ -174,14 +174,14 @@ void draw_particle(Particle p){
     
     float4 color = Types[p.type].color;
 
-    if(is_idle(p) && Types[p.type].is_solid){
+    /*if(is_idle(p) && Types[p.type].is_solid){
         Result[p.position] = float4(1, 0, 0, 1);
         return;
     }
     else {
         Result[p.position] = float4(0, 1, 0, 1);
         return;
-    }
+    }*/
     
     float noise = 1;
     if(p.type == 1) { // stone
@@ -197,7 +197,8 @@ void draw_particle(Particle p){
     else {
         noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2);
     }
-    Result[p.position] = color * (float4(1, 1, 1, 1) * (noise * 0.6 + 1));
+    noise = floor(noise * 4) / 4;
+    Result[p.position] = color * (float4(float3(1,1,1) * (noise * 0.5 + 0.5), 1));
     if(!get_type(p).is_wet) Result[p.position] *= 1 - p.wetness / 2;
     if(p.power > 0) Result[p.position] *= 1 + p.power / 2;
     if(p.power > 0) Result[p.position] = float4(0, p.power, 0, 1);

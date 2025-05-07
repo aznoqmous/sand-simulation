@@ -1176,7 +1176,7 @@ PolygonCollider2D:
       - {x: 0.0039177323, y: -0.08071742}
       - {x: 0.02036497, y: -0.048552766}
       - {x: 0.02005616, y: 0.06948633}
-  m_UseDelaunayMesh: 0
+  m_UseDelaunayMesh: 1
 --- !u!50 &1318452711
 Rigidbody2D:
   serializedVersion: 5
@@ -1217,8 +1217,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _polygonCollider: {fileID: 1318452709}
-  _texture: {fileID: 0}
+  _texture: {fileID: 2800000, guid: 19c4fce47d1115c44873f434861277f3, type: 3}
   _spriteRenderer: {fileID: 985376876}
+  _alphaThreshold: 0
 --- !u!1 &1327801655
 GameObject:
   m_ObjectHideFlags: 0
@@ -1507,7 +1508,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1533008802
 Transform:
   m_ObjectHideFlags: 0
@@ -1545,7 +1546,7 @@ MonoBehaviour:
   _useDeltaTime: 1
   _generateColliders: 0
   _colliderDebug: 0
-  _updateColliderFrequency: 0.2
+  _updateColliderFrequency: 10000
   _gravity: 98
   _idleTime: 1
   _seed: 123456
