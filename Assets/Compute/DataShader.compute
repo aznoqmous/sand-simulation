@@ -14,6 +14,7 @@ struct Particle {
     float idle_time;
     float birth;
     float wetness;
+    float power;
 };
 
 struct ParticleType {
@@ -23,7 +24,7 @@ struct ParticleType {
     int is_solid;
     int is_flammable;
     int is_abrasive;
-    int share_wetness;
+    float share_wetness;
     int is_wet;
     int burns;
     int corrosive;
@@ -111,6 +112,7 @@ void draw_particle(Particle p){
 }
 
 int color_to_type(float4 input_color){
+    if(input_color.w == 1) return 4; // wood
     return input_color.w * 64;
 }
 float4 type_to_color(int type){

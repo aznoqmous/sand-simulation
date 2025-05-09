@@ -197,7 +197,7 @@ void draw_particle(Particle p){
     else {
         noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2);
     }
-    noise = floor(noise * 4) / 4;
+    noise = floor(noise * 6) / 6;
     Result[p.position] = color * (float4(float3(1,1,1) * (noise * 0.5 + 0.5), 1));
     if(!get_type(p).is_wet) Result[p.position] *= 1 - p.wetness / 2;
     if(p.power > 0) Result[p.position] *= 1 + p.power / 2;
@@ -404,10 +404,12 @@ bool handle_water(inout Particle p){
 }
 
 void burn(float2 position, Particle particle){
-    if(rand(position) > DeltaTime) return;
+    if(rand(position) > DeltaTime * 10.0) return;
     Particle p = get_particle(position);
     p.type = particle.type; // fire
+    float rand_value = rand(position);
     p.birth = Time;
+    move_toward(p, float2(sin(rand_value * 3.14 * 2), cos(rand_value * 3.14 * 2.0)), 1.0);
     update_particle(position, p);
 }
 void burns_neighbors(Particle p){

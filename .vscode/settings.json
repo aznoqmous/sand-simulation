@@ -56,6 +56,6 @@
         "temp/": true,
         "Temp/": true
     },
-    "dotnet.defaultSolution": "sand-simulation-3.sln",
+    "dotnet.defaultSolution": "sand-simulation.sln",
     "editor.codeLens": false
 }

@@ -333,11 +333,14 @@ public class Chunk : MonoBehaviour
         {
             if (!req.hasError)
             {
+                /*
                 Texture2D texture = new Texture2D(_size, _size, TextureFormat.RGBA32, false);
                 texture.LoadRawTextureData(req.GetData<byte>());
                 texture.Apply();
                 _simulationPolygonCollider.UpdatePolygonCollider(texture.GetPixels(0, 0, _size, _size), _size, _size);
-                /*
+
+                */
+                
                 AdvancedPolygonCollider tempCollider = Instantiate(_collider, transform);
 
                 var rawData = req.GetData<Color>();
@@ -347,7 +350,7 @@ public class Chunk : MonoBehaviour
                 _colliderSpriteRenderer.sprite = Sprite.Create(_texture, new Rect(0, 0, _size, _size), Vector2.zero, _scale);
                 _collider.RecalculatePolygon();
 
-                Destroy(tempCollider.gameObject, 0.5f);*/
+                Destroy(tempCollider.gameObject, 0.5f);
             }
         });
     

@@ -1537,11 +1537,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _chunkPrefab: {fileID: 4894128201866133694, guid: 85ad83c741079cb438884120afcbb2d6, type: 3}
-  _chunkSize: 128
+  _chunkSize: 512
   _chunkScale: 2
-  _activeChunkDistance: 2
-  _drawBounds: 1
-  _useStorage: 0
+  _activeChunkDistance: 1
+  _drawBounds: 0
+  _useStorage: 1
   _proceduralGeneration: 1
   _useDeltaTime: 1
   _generateColliders: 0
@@ -1549,7 +1549,7 @@ MonoBehaviour:
   _updateColliderFrequency: 10000
   _gravity: 98
   _idleTime: 1
-  _seed: 123456
+  _seed: 13245
   _brushSize: 10
   _createdType: 0
   _particleTypes:
