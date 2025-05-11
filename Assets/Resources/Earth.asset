@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d8168a0c9732804ebd276c9978a32b7, type: 3}
   m_Name: Earth
   m_EditorClassIdentifier: 
-  color: {r: 0.19496846, g: 0.12733033, b: 0.07418609, a: 1}
+  color: {r: 0.44025147, g: 0.26699886, b: 0.13705938, a: 1}
   movementType: 0
   dispersion: 0
   isSolid: 1

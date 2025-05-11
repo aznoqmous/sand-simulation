@@ -7,10 +7,18 @@ public class Player : MonoBehaviour
     [SerializeField] float _jumpSpeed = 20f;
     [SerializeField] Rigidbody2D _rigidbody2D;
     [SerializeField] SpriteRenderer _sprite;
-    
+    [SerializeField] Animator _animator;
+    [SerializeField] Transform _groundDetection;
+    [SerializeField] Transform _spriteContainer;
+
+    void Start()
+    {
+        
+    }
+
     void Update()
     {
-        Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(transform.position.x, transform.position.y, Camera.main.transform.position.z), Time.deltaTime * _cameraSpeed);
+        //Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(transform.position.x, transform.position.y, Camera.main.transform.position.z), Time.deltaTime * _cameraSpeed);
 
         
         if(Input.GetKeyDown(KeyCode.T))
@@ -27,8 +35,14 @@ public class Player : MonoBehaviour
             _rigidbody2D.AddForce(Vector2.up * _jumpSpeed, ForceMode2D.Impulse);
         }
 
-        if(Input.GetAxis("Horizontal") < 0)  _sprite.transform.localScale = new Vector3(-1, 1, 1);
-        if(Input.GetAxis("Horizontal") > 0)  _sprite.transform.localScale = new Vector3(1, 1, 1);
+        if(Input.GetAxis("Horizontal") < 0)  _spriteContainer.transform.localScale = new Vector3(-1, 1, 1);
+        if(Input.GetAxis("Horizontal") > 0)  _spriteContainer.transform.localScale = new Vector3(1, 1, 1);
+
+        RaycastHit2D hit = Physics2D.Raycast(_groundDetection.position, Vector2.down, 0.01f);
+        _animator.SetBool("IsJumping", !hit);
+        _animator.SetBool("IsWalking", Mathf.Abs(_rigidbody2D.linearVelocity.x) > 0.3f);
+        _animator.SetFloat("VerticalVelocity", _rigidbody2D.linearVelocity.y);
+   
     }
     
     void FixedUpdate()

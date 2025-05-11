@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.PlayerLoop;
 
 public class Simulation : MonoBehaviour
 {
@@ -52,6 +52,7 @@ public class Simulation : MonoBehaviour
 
     [SerializeField] Interface _interface;
     
+    public Player Player => _player;
     float _worldChunkSize = 0f;
     public float WorldChunkSize => _worldChunkSize;
     int _particleCount = 0;
@@ -75,6 +76,7 @@ public class Simulation : MonoBehaviour
         SetCreatedType(_createdType);
         SetBrushSize(_brushSize);
 
+        LoadSprite("merci-de-votre-attention.png");
     }
 
     void InitParticleTypes(){
@@ -133,6 +135,17 @@ public class Simulation : MonoBehaviour
         );
     }
 
+    Chunk GetChunk(Vector2Int position)
+    {
+        if (!_chunks.ContainsKey(position))
+        {
+            Chunk newChunk = CreateChunk(position);
+            AddChunk(position, newChunk);
+            return newChunk;
+        }
+        return _chunks[position];
+    }
+
     void UpdateChunks(){
         Vector3 playerPosition = _player.transform.position / _worldChunkSize;
         Vector2Int activeChunks = GetActiveChunks();
@@ -143,11 +156,7 @@ public class Simulation : MonoBehaviour
                 Vector2Int position = new Vector2Int(x, y);
                 position += Vector2Int.FloorToInt(playerPosition);
                 if(!IsChunkActive(((Vector2)position) * _worldChunkSize)) continue;
-                if (!_chunks.ContainsKey(position))
-                {
-                    Chunk newChunk = CreateChunk(position);
-                    AddChunk(position, newChunk);
-                }
+                GetChunk(position);
             }
         }
 
@@ -337,6 +346,24 @@ public class Simulation : MonoBehaviour
             _particleTypesBuffer.Release();
             _particleTypesBuffer = null;
         }   
+    }
+
+    public void LoadSprite(string fileName){
+            string dirPath = Application.dataPath + "/../" + "/Data/";
+            byte[] bytes = File.ReadAllBytes(dirPath + "/" + fileName);
+            Texture2D tex = new Texture2D(2, 2);
+            tex.LoadImage(bytes);
+            tex.Apply();
+
+            for(int x = 0 ; x < (float) tex.width / _chunkSize; x++){
+                for(int y = 0 ; y < (float) tex.height / _chunkSize; y++){
+                    Debug.Log("Loading : " + x + " " + y);
+                    var texPart = new Texture2D(_chunkSize, _chunkSize);
+                    texPart.SetPixels(tex.GetPixels(x * _chunkSize, y * _chunkSize, _chunkSize, _chunkSize));
+                    texPart.Apply();
+                    GetChunk(new Vector2Int(x, y)).LoadTexture(texPart);
+                }
+            }
     }
 }
 

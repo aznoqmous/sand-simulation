@@ -51,6 +51,7 @@ int MouseType;
 int BrushSize;
 float2 ChunkPosition;
 float2 MousePosition;
+float2 PlayerPosition;
 float IdleTime;
 int Step;
 
@@ -187,7 +188,7 @@ void draw_particle(Particle p){
     if(p.type == 1) { // stone
         noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2);
     }
-    else if(p.type == 3) { // water
+    else if(p.type == 4) { // water
         noise = get_noise((ChunkPosition * Size + p.position + p.type * Size) / 2 + float2(Time, Time));
         color.w = 0.5;
     }
@@ -534,7 +535,7 @@ bool grow_wood(float2 position, Particle p){
     if(b.type != 0) return false;
     if(count_neighbor_of_type(position, 0) < 3) return false;
     //if(get_noise_01(position / 5) > 0.5 || rand(position) > DeltaTime) return;
-    b.type = 4;
+    b.type = 5;
     b.direction = DIR_ZERO;
     update_particle(position, b);
 
@@ -606,7 +607,7 @@ void handle_root(Particle p){
         transfer_power(p, p.power * DeltaTime * TRANSFER_SPEED_ROOT);
     }
 
-    int earth_ns = count_neighbor_of_type(p.position, 8);
+    int earth_ns = count_neighbor_of_type(p.position, 3);
     if(earth_ns < 3) {
         if(earth_ns > 1) grow_roots(p);
         return;
@@ -638,7 +639,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 
     ColliderTexture[p.position] = float4(0, 0, 0, 0);
     
-    if(distance(MousePosition, p.position) < BrushSize && MouseDown){
+     
+     // BRUSH DRAW
+     if(MouseDown && distance(MousePosition, p.position) < BrushSize){
         p.type = MouseType;
         p.idle_time = 0;
         p.birth = Time;
@@ -649,7 +652,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         wake_neighbors(p.position);
     }
     
-
     if(p.type == 0) {
         erase_particle(p);
 
@@ -680,7 +682,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     draw_particle(p);
     increment_particles_count();
 
-    if(p.type == 9 || p.type == 4){ // skip 1/2 root 
+    if(p.type == 9 || p.type == 5){ // skip 1/2 wood and root 
         //if(Step % 2 == (p.position.x + p.position.y) % 2) return;
         if(Step == 0 && !(current_step.x % 2 == 0 && current_step.y % 2 == 0)) return;
         if(Step == 1 && !(current_step.x % 2 == 1 && current_step.y % 2 == 0)) return;
@@ -689,7 +691,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     }
 
     
-    if(is_idle(p)){
+    if(is_idle(p)) // idle or wood
+    {
         if(type.is_solid == 1) {
             ColliderTexture[p.position] = float4(1, 1, 1, 1);
             increment_solid_particles_count();
@@ -725,7 +728,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         handle_root(p);
         return;
     }
-    if(p.type == 5){  // fire
+    if(p.type == 6){  // fire
         if(p.speed > 30 || is_idle(p)){
             delete_particle(p);
             return;
@@ -742,12 +745,14 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     if(type.corrosive == 1){
         corrosive_neighbors(p);
     }
-    /*if(type.is_wet == 1){
+    /*
+    if(type.is_wet == 1){
         soak_neighbors(p, 1);
     }
     if(type.share_wetness > 0){
         soak_neighbors(p, p.wetness);
-    }*/
+    }
+    */
     if(type.movement_type != 0) handle_particle_movement(p);
 }
 

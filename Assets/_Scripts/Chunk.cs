@@ -147,11 +147,11 @@ public class Chunk : MonoBehaviour
                         (_simulation.Seed  + 12345 + x + transform.position.x / _simulation.WorldChunkSize * _size) / 100f,
                         (_simulation.Seed  + 12345 + y + transform.position.y / _simulation.WorldChunkSize * _size) / 100f
                     );
-                    if(density > 0.8f && moist > 0.5f) p.particleType = 3; // water
+                    if(density > 0.8f && moist > 0.5f) p.particleType = 4; // water
                     else if(density > 0.7) p.particleType = 1; // stone
                     else if(density > 0.6) {
                         if(moist < 0.2f) p.particleType = 2; // sand
-                        else p.particleType = 8; // earth
+                        else p.particleType = 3; // earth
                     }
                 }
                 
@@ -187,7 +187,7 @@ public class Chunk : MonoBehaviour
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         mousePosition = ((mousePosition - (Vector2)transform.position) / _scale / (_size / ratio / 2f) + Vector2.one) * _size / 2f;
         float mouseSize = _simulation.BrushSize / _size * _simulation.WorldChunkSize;
-
+        Vector2 playerPosition = ((Vector2)(_simulation.Player.transform.position - transform.position) / _scale / (_size / ratio / 2f) + Vector2.one) * _size / 2f;
         if(!_isActiveState && Input.GetMouseButton(0)
         && mousePosition.x + mouseSize > 0
         && mousePosition.x - mouseSize < _size
@@ -203,6 +203,7 @@ public class Chunk : MonoBehaviour
 
         _statesBuffer.SetData(new int[7] { 0, 0, 0, 0, 0, 0, 0 });
         _computeShader.SetVector("MousePosition", mousePosition);
+        _computeShader.SetVector("PlayerPosition", playerPosition);
         _computeShader.SetBool("DrawBounds", _simulation.DrawBounds);
         _computeShader.SetBool("MouseDown", Input.GetMouseButton(0));
         _computeShader.SetBool("UseDeltaTime", _simulation.UseDeltaTime);
@@ -249,7 +250,7 @@ public class Chunk : MonoBehaviour
 
     public void SetActiveState(bool state=true){
         _isActiveState = state;
-        _testImage.enabled = state;
+        //_testImage.enabled = state;
     }
 
     public void SetSize(int size){
@@ -421,7 +422,7 @@ public class Chunk : MonoBehaviour
 
     public void Load()
     {
-
+        if(!_simulation.UseStorage) return;
         if(!HasSaveFile()) return;
         SetActiveState(false);
 
@@ -429,7 +430,11 @@ public class Chunk : MonoBehaviour
         Texture2D tex = new Texture2D(_size, _size);
         tex.LoadImage(bytes);
         tex.Apply();
-        Graphics.Blit(tex, _renderTexture);
+        LoadTexture(tex);
+    }
+
+    public void LoadTexture(Texture2D texture){
+        Graphics.Blit(texture, _renderTexture);
 
         int dataKernel = _dataShader.FindKernel("CSMain");
         _dataShader.SetBuffer(dataKernel, "Particles", _particlesBuffer);

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d8168a0c9732804ebd276c9978a32b7, type: 3}
   m_Name: Sand
   m_EditorClassIdentifier: 
-  color: {r: 0.8867924, g: 0.79127634, b: 0.3890174, a: 1}
+  color: {r: 1, g: 0.8573437, b: 0.24213827, a: 1}
   movementType: 1
   dispersion: 1
   isSolid: 1
