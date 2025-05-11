@@ -175,7 +175,7 @@ void draw_particle(Particle p){
     
     float4 color = Types[p.type].color;
 
-    /*if(is_idle(p) && Types[p.type].is_solid){
+    /*if(is_idle(p)){
         Result[p.position] = float4(1, 0, 0, 1);
         return;
     }

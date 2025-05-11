@@ -1,0 +1,689 @@
+fileFormatVersion: 2
+guid: e431ef1559532f14ba7338d3cbde964e
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 9174146965242390774
+    second: merci-de-votre-attention_0
+  - first:
+      213: -1793812171595914821
+    second: merci-de-votre-attention_1
+  - first:
+      213: 5379351323685683132
+    second: merci-de-votre-attention_2
+  - first:
+      213: -2373380908282259018
+    second: merci-de-votre-attention_3
+  - first:
+      213: 1146021601770980210
+    second: merci-de-votre-attention_4
+  - first:
+      213: 4369166367031941065
+    second: merci-de-votre-attention_5
+  - first:
+      213: 3402363795697690839
+    second: merci-de-votre-attention_6
+  - first:
+      213: -6806926959612347939
+    second: merci-de-votre-attention_7
+  - first:
+      213: -225907698824612579
+    second: merci-de-votre-attention_8
+  - first:
+      213: 8639841751965989616
+    second: merci-de-votre-attention_9
+  - first:
+      213: 2735784878656803043
+    second: merci-de-votre-attention_10
+  - first:
+      213: 8370937836312665489
+    second: merci-de-votre-attention_11
+  - first:
+      213: 4611338308290778450
+    second: merci-de-votre-attention_12
+  - first:
+      213: -8490452015445767751
+    second: merci-de-votre-attention_13
+  - first:
+      213: -7664951716067615636
+    second: merci-de-votre-attention_14
+  - first:
+      213: 5317348585187527253
+    second: merci-de-votre-attention_15
+  - first:
+      213: 7959897803498797897
+    second: merci-de-votre-attention_16
+  - first:
+      213: -4497419563144522647
+    second: merci-de-votre-attention_17
+  - first:
+      213: 5339157535990207199
+    second: merci-de-votre-attention_18
+  - first:
+      213: -580429156861738005
+    second: merci-de-votre-attention_19
+  - first:
+      213: -2847419469945839386
+    second: merci-de-votre-attention_20
+  - first:
+      213: -2281148236282789210
+    second: merci-de-votre-attention_21
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: merci-de-votre-attention_0
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 254
+        width: 49
+        height: 65
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f82084ee0e115f70800000000000000
+      internalID: 9174146965242390774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_1
+      rect:
+        serializedVersion: 2
+        x: 184
+        y: 303
+        width: 12
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb1e04e75591b17e0800000000000000
+      internalID: -1793812171595914821
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_2
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 254
+        width: 35
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbfff42278b47aa40800000000000000
+      internalID: 5379351323685683132
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_3
+      rect:
+        serializedVersion: 2
+        x: 389
+        y: 254
+        width: 35
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6b9542d73ae001fd0800000000000000
+      internalID: -2373380908282259018
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_4
+      rect:
+        serializedVersion: 2
+        x: 73
+        y: 254
+        width: 36
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 273cb7e239c77ef00800000000000000
+      internalID: 1146021601770980210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_5
+      rect:
+        serializedVersion: 2
+        x: 112
+        y: 254
+        width: 33
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9c7d58779a562ac30800000000000000
+      internalID: 4369166367031941065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_6
+      rect:
+        serializedVersion: 2
+        x: 146
+        y: 254
+        width: 36
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d8e53f78df973f20800000000000000
+      internalID: 3402363795697690839
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_7
+      rect:
+        serializedVersion: 2
+        x: 185
+        y: 254
+        width: 11
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dd9b640beffe881a0800000000000000
+      internalID: -6806926959612347939
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_8
+      rect:
+        serializedVersion: 2
+        x: 259
+        y: 254
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d157883152a6ddcf0800000000000000
+      internalID: -225907698824612579
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_9
+      rect:
+        serializedVersion: 2
+        x: 316
+        y: 254
+        width: 37
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0fa758d2c42e6e770800000000000000
+      internalID: 8639841751965989616
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_10
+      rect:
+        serializedVersion: 2
+        x: 354
+        y: 254
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e059323ad577f520800000000000000
+      internalID: 2735784878656803043
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_11
+      rect:
+        serializedVersion: 2
+        x: 425
+        y: 254
+        width: 32
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19d1b4a6c9b8b2470800000000000000
+      internalID: 8370937836312665489
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_12
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 254
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 25592dc62c3ceff30800000000000000
+      internalID: 4611338308290778450
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_13
+      rect:
+        serializedVersion: 2
+        x: 137
+        y: 169
+        width: 67
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9b90bd450eadb2a80800000000000000
+      internalID: -8490452015445767751
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_14
+      rect:
+        serializedVersion: 2
+        x: 279
+        y: 169
+        width: 34
+        height: 69
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c6cd44f560f90a590800000000000000
+      internalID: -7664951716067615636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_15
+      rect:
+        serializedVersion: 2
+        x: 314
+        y: 218
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 55a470f9d540bc940800000000000000
+      internalID: 5317348585187527253
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_16
+      rect:
+        serializedVersion: 2
+        x: 103
+        y: 169
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 94b35f101ec377e60800000000000000
+      internalID: 7959897803498797897
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_17
+      rect:
+        serializedVersion: 2
+        x: 201
+        y: 169
+        width: 36
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 964d0e45cb4f591c0800000000000000
+      internalID: -4497419563144522647
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_18
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 169
+        width: 34
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd2db8cad7f781a40800000000000000
+      internalID: 5339157535990207199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_19
+      rect:
+        serializedVersion: 2
+        x: 315
+        y: 169
+        width: 11
+        height: 47
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: be30affc1c6e1f7f0800000000000000
+      internalID: -580429156861738005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_20
+      rect:
+        serializedVersion: 2
+        x: 333
+        y: 169
+        width: 35
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6e0e85f041feb78d0800000000000000
+      internalID: -2847419469945839386
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: merci-de-votre-attention_21
+      rect:
+        serializedVersion: 2
+        x: 373
+        y: 169
+        width: 34
+        height: 48
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6a20b50e3cbb750e0800000000000000
+      internalID: -2281148236282789210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      merci-de-votre-attention_0: 9174146965242390774
+      merci-de-votre-attention_1: -1793812171595914821
+      merci-de-votre-attention_10: 2735784878656803043
+      merci-de-votre-attention_11: 8370937836312665489
+      merci-de-votre-attention_12: 4611338308290778450
+      merci-de-votre-attention_13: -8490452015445767751
+      merci-de-votre-attention_14: -7664951716067615636
+      merci-de-votre-attention_15: 5317348585187527253
+      merci-de-votre-attention_16: 7959897803498797897
+      merci-de-votre-attention_17: -4497419563144522647
+      merci-de-votre-attention_18: 5339157535990207199
+      merci-de-votre-attention_19: -580429156861738005
+      merci-de-votre-attention_2: 5379351323685683132
+      merci-de-votre-attention_20: -2847419469945839386
+      merci-de-votre-attention_21: -2281148236282789210
+      merci-de-votre-attention_3: -2373380908282259018
+      merci-de-votre-attention_4: 1146021601770980210
+      merci-de-votre-attention_5: 4369166367031941065
+      merci-de-votre-attention_6: 3402363795697690839
+      merci-de-votre-attention_7: -6806926959612347939
+      merci-de-votre-attention_8: -225907698824612579
+      merci-de-votre-attention_9: 8639841751965989616
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

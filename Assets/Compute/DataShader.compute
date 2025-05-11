@@ -81,7 +81,9 @@ void CSMain (uint3 id : SV_DispatchThreadID)
         Result[id.xy] = type_to_color(Particles[id.x * Size + id.y].type);
     }
     if(IsLoad == 1){
-        Particles[id.x * Size + id.y].type = color_to_type(Result[id.xy]);
+        int type = color_to_type(Result[id.xy]);
+        if(type == 0) return;
+        Particles[id.x * Size + id.y].type = type;
     }
 }
 

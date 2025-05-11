@@ -18,7 +18,7 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        //Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(transform.position.x, transform.position.y, Camera.main.transform.position.z), Time.deltaTime * _cameraSpeed);
+        if(false) Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, new Vector3(transform.position.x, transform.position.y, Camera.main.transform.position.z), Time.deltaTime * _cameraSpeed);
 
         
         if(Input.GetKeyDown(KeyCode.T))

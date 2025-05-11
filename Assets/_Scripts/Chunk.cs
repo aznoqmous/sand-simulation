@@ -250,7 +250,7 @@ public class Chunk : MonoBehaviour
 
     public void SetActiveState(bool state=true){
         _isActiveState = state;
-        //_testImage.enabled = state;
+        _testImage.enabled = state;
     }
 
     public void SetSize(int size){

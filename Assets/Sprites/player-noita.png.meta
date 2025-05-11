@@ -134,7 +134,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      player-noita_0: -6718901896983692949
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

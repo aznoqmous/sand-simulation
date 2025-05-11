@@ -349,7 +349,7 @@ public class Simulation : MonoBehaviour
     }
 
     public void LoadSprite(string fileName){
-            string dirPath = Application.dataPath + "/../" + "/Data/";
+            string dirPath = Application.dataPath + "/../" + "/Assets/Sprites/";
             byte[] bytes = File.ReadAllBytes(dirPath + "/" + fileName);
             Texture2D tex = new Texture2D(2, 2);
             tex.LoadImage(bytes);

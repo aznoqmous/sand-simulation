@@ -1610,7 +1610,7 @@ MonoBehaviour:
   _updateColliderFrequency: 0.2
   _gravity: 98
   _idleTime: 0.2
-  _seed: 123456
+  _seed: 12345
   _brushSize: 5
   _createdType: 0
   _particleTypes:
